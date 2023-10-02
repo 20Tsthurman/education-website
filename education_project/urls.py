@@ -21,6 +21,7 @@ from django.views.generic.base import RedirectView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('users/', include('users.urls')),
+    path('courses/', include('courses.urls')),
     path('teachers/', include('teachers.urls')),
     path('students/', include('students.urls')),
     re_path(r'^$', RedirectView.as_view(url='/users/login/')),  # Redirect base URL to /users/login/

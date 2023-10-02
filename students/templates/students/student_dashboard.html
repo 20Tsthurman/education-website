@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Welcome, {{ user.email }}!</h1>
+    <h2>Enrolled Courses</h2>
+    <ul>
+        {% for course in courses %}
+            <li>{{ course.name }}</li>
+        {% endfor %}
+    </ul>
+    <!-- Add more sections as needed -->
+{% endblock %}

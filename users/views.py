@@ -9,10 +9,23 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.models import Group
 from django.contrib.auth.forms import UserCreationForm
+from django.http import HttpResponse
+from courses.models import Course
+from teachers.views import teacher_dashboard
+
 
 @login_required
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    if request.user.user_type == 'student':
+        return student_dashboard(request)
+    elif request.user.user_type == 'teacher':
+        return teacher_dashboard(request)
+
+def student_dashboard(request):
+    # Retrieve the courses the student is enrolled in
+    courses = Course.objects.filter(students=request.user)
+    return render(request, 'students/student_dashboard.html', {'courses': courses})
+
 
 def homepage(request):
     return render(request, 'homepage.html')
@@ -65,10 +78,6 @@ def user_logout(request):
     logout(request)  # Log the user out
     return redirect('login')  # Redirect to the login page
 
-# users/views.py
-
-from django.contrib.auth.decorators import login_required
-from .forms import UserRegistrationForm
 
 @login_required
 def account_settings(request):

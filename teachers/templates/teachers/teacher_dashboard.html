@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Welcome, {{ request.user.email }}!</h1>
+
+<h2>Your Courses:</h2>
+<ul>
+    {% for course in courses %}
+    <a href="{% url 'course_detail' course.id %}">{{ course.name }}</a><br>
+    {% endfor %}
+
+</ul>
+
+<!-- Link to create a new course -->
+<a href="{% url 'create_course' %}">Create New Course</a>
+
+{% endblock %}

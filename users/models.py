@@ -1,5 +1,3 @@
-# users/models.py
-
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
@@ -29,7 +27,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ('teacher', 'Teacher'),
     )
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='student')
-
 
     objects = CustomUserManager()
 

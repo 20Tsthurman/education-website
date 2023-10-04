@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+
 {% block content %}
-  <h2>{{ lesson.title }}</h2>
-  <p>{{ lesson.description }}</p>
-  <div>{{ lesson.content }}</div>
+    <h2>{{ lesson.title }}</h2>
+    <p>{{ lesson.content }}</p>
+    <a href="{% url 'teachers:edit_lesson' lesson.id %}">Edit</a>
+    <a href="{% url 'teachers:delete_lesson' lesson.id %}">Delete</a>
 {% endblock %}

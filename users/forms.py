@@ -16,3 +16,8 @@ class UserRegistrationForm(UserCreationForm):
         self.fields['password1'].widget.attrs['autocomplete'] = 'new-password'
         self.fields['password2'].help_text = "Enter the same password as before, for verification."
         self.fields['password2'].widget.attrs['autocomplete'] = 'new-password'
+
+class CustomUserAdminForm(UserCreationForm):
+    class Meta:
+        model = CustomUser
+        fields = '__all__'

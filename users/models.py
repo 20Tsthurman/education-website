@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.utils import timezone
+import importlib
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, user_type, password=None, **extra_fields):
@@ -20,7 +22,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(default=timezone.now)
     
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Call the "real" save() method.
+        if self.user_type == 'teacher':
+            Teacher = importlib.import_module('teachers.models').Teacher  # Dynamically import the Teacher model
+            Teacher.objects.get_or_create(user=self) 
+
     # User roles
     USER_TYPE_CHOICES = (
         ('student', 'Student'),

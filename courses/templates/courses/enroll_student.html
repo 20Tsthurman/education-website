@@ -1,0 +1,11 @@
+{# File: enroll_student.html #}
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Enroll Student in {{ course.name }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Enroll</button>
+  </form>
+{% endblock %}

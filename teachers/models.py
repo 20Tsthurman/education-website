@@ -1,34 +1,23 @@
 from django.db import models
 from django.conf import settings
-
-from courses.models import Course
+from users.models import CustomUser
 
 class Teacher(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='teacher')
     bio = models.TextField(blank=True)
     # Add more fields as needed
 
 class Quiz(models.Model):
     title = models.CharField(max_length=100)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    teacher = models.ForeignKey('teachers.Teacher', on_delete=models.CASCADE)  # Updated this line
     students = models.ManyToManyField('users.CustomUser', through='QuizEnrollment')
     # Add more fields as needed
 
 class Assignment(models.Model):
     title = models.CharField(max_length=100)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    teacher = models.ForeignKey('teachers.Teacher', on_delete=models.CASCADE)  # Updated this line
     students = models.ManyToManyField('users.CustomUser', through='AssignmentEnrollment')
     # Add more fields as needed
-    
-class Lesson(models.Model):
-    title = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    content = models.TextField(default="Default lesson content.")
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    students = models.ManyToManyField('users.CustomUser', through='LessonEnrollment')
-
-
 
 class Grade(models.Model):
     student = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
@@ -38,17 +27,9 @@ class Grade(models.Model):
     grade = models.DecimalField(max_digits=5, decimal_places=2)
     # Add more fields as needed
 
-class Discussion(models.Model):
-    title = models.CharField(max_length=200)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    # Add more fields as needed
-
-class File(models.Model):
-    title = models.CharField(max_length=200)
-    file = models.FileField(upload_to='uploads/')  # You can define a custom upload path
-    # Add more fields as needed
-
-# Create enrollment models for quizzes, assignments, and lessons
+class LessonEnrollment(models.Model):
+    lesson = models.ForeignKey('courses.Lesson', on_delete=models.CASCADE)  # Ensure this line stays as is
+    student = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
 
 class QuizEnrollment(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
@@ -56,8 +37,4 @@ class QuizEnrollment(models.Model):
 
 class AssignmentEnrollment(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
-    student = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
-
-class LessonEnrollment(models.Model):
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     student = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)

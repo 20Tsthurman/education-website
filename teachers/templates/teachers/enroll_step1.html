@@ -1,0 +1,11 @@
+{# File: teachers/templates/teachers/enroll_step1.html #}
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Select a Course</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Next</button>
+  </form>
+{% endblock %}

@@ -6,12 +6,14 @@
 <h2>Your Courses:</h2>
 <ul>
     {% for course in courses %}
-    <a href="{% url 'course_detail' course.id %}">{{ course.name }}</a><br>
+    <a href="{% url 'teachers:course_detail' course.id %}">{{ course.name }}</a><br>
     {% endfor %}
-
 </ul>
 
 <!-- Link to create a new course -->
-<a href="{% url 'create_course' %}">Create New Course</a>
+<a href="{% url 'courses:create_course' %}">Create New Course</a>
+
+<!-- Link to start the enrollment process -->
+<a href="{% url 'teachers:enroll_student_step1' %}">Enroll Student</a>
 
 {% endblock %}

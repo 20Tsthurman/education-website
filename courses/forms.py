@@ -1,6 +1,6 @@
 from django import forms
 from courses.models import Course
-from .models import Lesson
+from .models import Enrollment, Lesson
 
 class CourseForm(forms.ModelForm):
     class Meta:
@@ -10,4 +10,9 @@ class CourseForm(forms.ModelForm):
 class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson
-        fields = ['title', 'description', 'content']  # adjust the fields as needed
+        fields = ['title', 'description', 'content']
+
+class EnrollmentForm(forms.ModelForm):
+    class Meta:
+        model = Enrollment
+        fields = ['student', 'course']

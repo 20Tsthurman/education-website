@@ -1,0 +1,11 @@
+{# File: my_courses.html #}
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>My Courses</h2>
+  <ul>
+    {% for enrollment in enrollments %}
+      <li>{{ enrollment.course.name }} - Enrolled on {{ enrollment.enrolled_on }}</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

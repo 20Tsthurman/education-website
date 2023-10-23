@@ -10,7 +10,7 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth.models import Group
 from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponse
-from courses.models import Course
+from courses.models import Course, Enrollment
 from teachers.views import teacher_dashboard
 
 
@@ -105,3 +105,4 @@ class CustomPasswordChangeDoneView(PasswordChangeDoneView):
         context = super().get_context_data(**kwargs)
         # Add any additional context data you want to pass to the template
         return context
+    

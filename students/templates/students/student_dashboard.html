@@ -1,12 +1,14 @@
+<!-- students/templates/students/dashboard.html -->
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Welcome, {{ user.email }}!</h1>
-    <h2>Enrolled Courses</h2>
-    <ul>
-        {% for course in courses %}
-            <li>{{ course.name }}</li>
-        {% endfor %}
-    </ul>
-    <!-- Add more sections as needed -->
+<h1>Welcome, {{ request.user.email }}!</h1>
+
+<h2>Your Courses:</h2>
+<ul>
+    {% for course in courses_enrolled %}
+    <li><a href="{% url 'courses:course_detail' course.id %}">{{ course.name }}</a></li>  <!-- Fixed line -->
+    {% endfor %}
+</ul>
+
 {% endblock %}

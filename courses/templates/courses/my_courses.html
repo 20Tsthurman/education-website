@@ -1,11 +1,15 @@
-{# File: my_courses.html #}
+<!-- courses/templates/courses/my_courses.html -->
 {% extends "base.html" %}
 
 {% block content %}
-  <h2>My Courses</h2>
-  <ul>
+<h1>My Courses</h1>
+<ul>
     {% for enrollment in enrollments %}
-      <li>{{ enrollment.course.name }} - Enrolled on {{ enrollment.enrolled_on }}</li>
+        <li>
+            <a href="{% url 'courses:course_detail' enrollment.course.id %}">
+                {{ enrollment.course.name }}
+            </a>
+        </li>
     {% endfor %}
-  </ul>
+</ul>
 {% endblock %}

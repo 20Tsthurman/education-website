@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from courses.models import Course, Lesson
+from courses.models import Course, Enrollment, Lesson
 from courses.forms import LessonForm
 from django.contrib.auth.decorators import login_required
 from teachers.models import Teacher
@@ -81,7 +81,16 @@ def delete_lesson(request, lesson_id):
 @login_required
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
-    return render(request, 'courses/course_detail.html', {'course': course})
+    # Retrieve enrollments related to this course
+    enrollments = Enrollment.objects.filter(course=course)
+    # Build a list of students from the enrollments
+    students = [enrollment.student for enrollment in enrollments]
+    # Now 'students' is a list of User objects representing the students enrolled in the course.
+    return render(
+        request,
+        'courses/course_detail.html',
+        {'course': course, 'students': students}
+    )
 
 @login_required
 def create_lesson(request, course_id):

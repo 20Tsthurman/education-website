@@ -1,7 +1,9 @@
 from django.urls import path
 from . import views
 
+app_name = 'students'
+
 urlpatterns = [
-    # Define your URL patterns for student views here
-    # Example: path('dashboard/', views.student_dashboard, name='student_dashboard'),
+    path('dashboard/', views.student_dashboard, name='student_dashboard'),
+    path('lesson/<int:lesson_id>/', views.lesson_detail, name='lesson_detail'),
 ]

@@ -1,0 +1,17 @@
+<!-- students/templates/students/take_quiz.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Take Quiz: {{ quiz.title }}</h1>
+  <form method="post">
+    {% csrf_token %}
+    {% for form in forms %}
+      <fieldset>
+        <legend>{{ form.question.text }}</legend>
+        {{ form.choice }}
+      </fieldset>
+    {% endfor %}
+    <button type="submit">Submit</button>
+  </form>
+{% endblock %}

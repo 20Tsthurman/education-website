@@ -3,10 +3,7 @@ from django.apps import apps
 from students.models import Student
 from users.models import CustomUser
 from django.db import transaction
-from teachers.models import Teacher
 from django.conf import settings
-
-
 
 @transaction.atomic
 def get_default_course():
@@ -18,13 +15,12 @@ def get_default_course():
 
 @transaction.atomic
 def default_teacher():
+    # Use apps.get_model instead of direct import
     Teacher = apps.get_model('teachers', 'Teacher')
     CustomUser = apps.get_model('users', 'CustomUser')
     default_user, _ = CustomUser.objects.get_or_create(email='default_teacher@example.com')
     default_teacher, _ = Teacher.objects.get_or_create(user=default_user)
     return default_teacher.id
-
-
 
 class Course(models.Model):
     name = models.CharField(max_length=200, db_index=True)

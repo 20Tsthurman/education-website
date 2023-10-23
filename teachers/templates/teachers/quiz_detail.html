@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ quiz.title }}</h2>
+<p>Questions:</p>
+<ul>
+    {% for question in questions %}
+        <li>{{ question.text }}</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'teachers:create_question' quiz.id %}">Add Question</a> <!-- New line -->
+<a href="{% url 'teachers:edit_quiz' quiz.id %}">Edit Quiz</a>
+<a href="{% url 'teachers:delete_quiz' quiz.id %}">Delete Quiz</a>
+{% endblock %}

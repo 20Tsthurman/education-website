@@ -8,6 +8,9 @@
         <!-- Link to create a new lesson for this course -->
         <a href="{% url 'teachers:create_lesson' course.id %}">Create New Lesson</a>
 
+        <!-- Link to create a new quiz for this course -->
+        <a href="{% url 'teachers:create_quiz' course.id %}">Create New Quiz</a>
+
         <!-- List existing lessons for this course -->
         <h3>Lessons</h3>
         <ul>
@@ -16,6 +19,18 @@
                     <a href="{% url 'teachers:lesson_detail' lesson.id %}">{{ lesson.title }}</a>
                     <a href="{% url 'teachers:edit_lesson' lesson.id %}">Edit</a>
                     <a href="{% url 'teachers:delete_lesson' lesson.id %}">Delete</a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!-- List existing quizzes for this course -->
+        <h3>Quizzes</h3>
+        <ul>
+            {% for quiz in course.quiz_set.all %}
+                <li>
+                    <a href="{% url 'teachers:quiz_detail' quiz.id %}">{{ quiz.title }}</a>
+                    <a href="{% url 'teachers:edit_quiz' quiz.id %}">Edit</a>
+                    <a href="{% url 'teachers:delete_quiz' quiz.id %}">Delete</a>
                 </li>
             {% endfor %}
         </ul>
@@ -36,6 +51,16 @@
             {% for lesson in course.lesson_set.all %}
                 <li>
                     <a href="{% url 'students:lesson_detail' lesson.id %}">{{ lesson.title }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!-- For students, list the quizzes they can take -->
+        <h3>Quizzes</h3>
+        <ul>
+            {% for quiz in course.quiz_set.all %}
+                <li>
+                    <a href="{% url 'students:take_quiz' quiz.id %}">{{ quiz.title }}</a>
                 </li>
             {% endfor %}
         </ul>

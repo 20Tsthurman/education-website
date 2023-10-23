@@ -48,8 +48,12 @@ def course_detail(request, pk):
     course = get_object_or_404(Course, pk=pk)
     enrollments = Enrollment.objects.filter(course=course)  # Get all enrollments for this course
     students = [enrollment.student for enrollment in enrollments]  # Build a list of students from the enrollments
-    return render(request, 'courses/course_detail.html', {'course': course, 'students': students})
-
+    quizzes = course.quizzes.all()  # Get all quizzes related to this course
+    return render(
+        request,
+        'courses/course_detail.html',
+        {'course': course, 'students': students, 'quizzes': quizzes}
+    )
 
 
 @login_required

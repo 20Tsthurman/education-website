@@ -12,4 +12,4 @@ class AnswerForm(forms.Form):
     def __init__(self, *args, **kwargs):
         question = kwargs.pop('question')
         super().__init__(*args, **kwargs)
-        self.fields['choice'].queryset = Choice.objects.filter(question=question)
+        self.fields['choice'].queryset = question.choice_set.all()

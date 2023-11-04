@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Your Grades</h1>
+  {% for grade in grades %}
+    <div>
+      {% if grade.quiz %}
+        <p>Quiz: {{ grade.quiz.title }} - {{ grade.grade }}%</p>
+      {% elif grade.assignment %}
+        <p>Assignment: {{ grade.assignment.title }} - {{ grade.grade }}%</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% endblock %}

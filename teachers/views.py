@@ -7,10 +7,12 @@ from django.contrib.auth.decorators import login_required
 from teachers.models import Teacher
 from .forms import ChoiceFormSet, TeacherEnrollmentForm
 from teachers.forms import CourseSelectionForm, EnrollmentForm
-from .models import Question, Quiz
+from .models import Question
 from .forms import QuizForm 
 from .forms import QuestionForm
 from django.db import transaction
+from teachers.models import Grade, Quiz, Assignment
+from django.db.models import Q
 
 
 @login_required
@@ -84,15 +86,21 @@ def delete_lesson(request, lesson_id):
 @login_required
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
-    # Retrieve enrollments related to this course
+    if not hasattr(request.user, 'teacher') or request.user.teacher != course.teacher:
+        return redirect('some_error_page')  # Replace with your error page
+    
     enrollments = Enrollment.objects.filter(course=course)
-    # Build a list of students from the enrollments
     students = [enrollment.student for enrollment in enrollments]
-    # Now 'students' is a list of User objects representing the students enrolled in the course.
+    grades = Grade.objects.filter(Q(quiz__course=course) | Q(assignment__course=course))
+    
     return render(
         request,
         'courses/course_detail.html',
-        {'course': course, 'students': students}
+        {
+            'course': course,
+            'students': students,
+            'grades': grades
+        }
     )
 
 @login_required
@@ -118,6 +126,21 @@ def create_lesson(request, course_id):
         form = LessonForm()
     return render(request, 'teachers/create_lesson.html', {'form': form, 'course': course})
 
+
+@login_required
+def gradebook(request):
+    if not hasattr(request.user, 'teacher'):
+        return redirect('some_error_page')  # Replace with your error page
+
+    grades = Grade.objects.filter(teacher=request.user.teacher)
+    quizzes = Quiz.objects.filter(teacher=request.user.teacher)
+    assignments = Assignment.objects.filter(teacher=request.user.teacher)
+    
+    return render(
+        request,
+        'teachers/gradebook.html',
+        {'grades': grades, 'quizzes': quizzes, 'assignments': assignments}
+    )
 
 @login_required
 @transaction.atomic

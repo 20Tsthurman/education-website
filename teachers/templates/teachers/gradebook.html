@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Gradebook</h1>
+  
+  <h2>Quizzes</h2>
+  {% for quiz in quizzes %}
+    <h3>{{ quiz.title }}</h3>
+    {% for grade in grades %}
+      {% if grade.quiz == quiz %}
+        <p>{{ grade.student.username }}: {{ grade.grade }}%</p>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+  
+  <h2>Assignments</h2>
+  {% for assignment in assignments %}
+    <h3>{{ assignment.title }}</h3>
+    {% for grade in grades %}
+      {% if grade.assignment == assignment %}
+        <p>{{ grade.student.username }}: {{ grade.grade }}%</p>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+  
+{% endblock %}

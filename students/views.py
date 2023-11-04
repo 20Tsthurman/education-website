@@ -5,6 +5,7 @@ from courses.models import Course, Enrollment
 from courses.models import Lesson
 from teachers.models import Grade, Quiz
 from .forms import AnswerForm
+from django.contrib import messages
 
 @login_required
 def student_dashboard(request):
@@ -17,6 +18,15 @@ def student_dashboard(request):
 def lesson_detail(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
     return render(request, 'students/lesson_detail.html', {'lesson': lesson})
+
+@login_required
+def view_grades(request):
+    grades = Grade.objects.filter(student=request.user)
+    return render(
+        request,
+        'students/view_grades.html',
+        {'grades': grades}
+    )
 
 @login_required
 def take_quiz(request, quiz_id):
@@ -32,20 +42,27 @@ def take_quiz(request, quiz_id):
                     correct_answers += 1
         grade_value = (correct_answers / total_questions) * 100  # Assuming grades are out of 100
 
-        # Create and save the Grade
-        grade_record = Grade(student=request.user, quiz=quiz, teacher=quiz.teacher, grade=grade_value)
-        grade_record.save()
+        # Determine the next attempt number
+        previous_attempts = Grade.objects.filter(student=request.user, quiz=quiz).count()
+        if previous_attempts < 3:
+            attempt_number = previous_attempts + 1
+            # Create and save the Grade
+            grade_record = Grade(student=request.user, quiz=quiz, teacher=quiz.teacher, grade=grade_value, attempt_number=attempt_number)
+            grade_record.save()
+        else:
+            messages.error(request, "You have already attempted this quiz 3 times.")
+            return redirect('students:quiz_results', quiz_id=quiz.id)
 
         return redirect('students:quiz_results', quiz_id=quiz.id)
     else:
-        forms = [
-            AnswerForm(question=question, prefix=str(question.id))
+        form_question_pairs = [
+            (question, AnswerForm(question=question, prefix=str(question.id)))
             for question in quiz.question_set.all()
         ]
     return render(
         request,
         'students/take_quiz.html',
-        {'quiz': quiz, 'forms': forms}
+        {'quiz': quiz, 'form_question_pairs': form_question_pairs}
     )
 
 def course_quizzes(request, course_id):
@@ -56,9 +73,11 @@ def course_quizzes(request, course_id):
 @login_required
 def quiz_results(request, quiz_id):
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    grade = get_object_or_404(Grade, quiz=quiz, student=request.user)
+    grades = Grade.objects.filter(quiz=quiz, student=request.user)
+    remaining_attempts = 3 - grades.count()
     return render(
         request,
         'students/quiz_results.html',
-        {'quiz': quiz, 'grade': grade}
+        {'quiz': quiz, 'grades': grades, 'remaining_attempts': remaining_attempts}
     )
+

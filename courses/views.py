@@ -8,6 +8,9 @@ from courses.forms import LessonForm
 from django.contrib.auth.decorators import login_required
 from teachers.models import Teacher 
 from .forms import EnrollmentForm
+from courses.models import Course
+from teachers.models import Grade
+from django.db.models import Q
 
 @login_required
 def create_course(request):
@@ -46,13 +49,31 @@ def create_lesson(request, course_id):
 @login_required
 def course_detail(request, pk):
     course = get_object_or_404(Course, pk=pk)
-    enrollments = Enrollment.objects.filter(course=course)  # Get all enrollments for this course
-    students = [enrollment.student for enrollment in enrollments]  # Build a list of students from the enrollments
-    quizzes = course.quizzes.all()  # Get all quizzes related to this course
+    enrollments = Enrollment.objects.filter(course=course)
+    students = [enrollment.student for enrollment in enrollments]
+    assignments = course.assignments.all()
+    
+    # Determine user type and fetch grades accordingly
+    if request.user.user_type == 'teacher':
+        grades = Grade.objects.filter(
+            Q(student__in=students, quiz__course=course) |
+            Q(student__in=students, assignment__course=course)
+        )
+    else:  # Assuming the only other user type is 'student'
+        grades = Grade.objects.filter(
+            Q(quiz__course=course) | Q(assignment__course=course),
+            student=request.user
+        )
+
     return render(
         request,
         'courses/course_detail.html',
-        {'course': course, 'students': students, 'quizzes': quizzes}
+        {
+            'course': course,
+            'students': students,
+            'assignments': assignments,
+            'grades': grades,
+        }
     )
 
 

@@ -2,5 +2,12 @@
 
 {% block content %}
 <h1>{{ quiz.title }} Results</h1>
-<p>Your grade: {{ grade.grade }}%</p>
+{% if remaining_attempts <= 0 %}
+    <p>No more attempts allowed.</p>
+{% else %}
+    <p>You have {{ remaining_attempts }} attempts remaining.</p>
+{% endif %}
+{% for grade in grades %}
+    <p>Attempt {{ grade.attempt_number }}: {{ grade.grade }}%</p>
+{% endfor %}
 {% endblock %}

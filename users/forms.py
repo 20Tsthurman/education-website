@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser
+from django import forms
+from .models import Discussion, Reply
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(max_length=254, required=True, help_text="Required. Enter a valid email address.")
@@ -21,3 +23,13 @@ class CustomUserAdminForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = '__all__'
+
+class DiscussionForm(forms.ModelForm):
+    class Meta:
+        model = Discussion
+        fields = ['title', 'topic', 'content', 'upload_file']
+
+class ReplyForm(forms.ModelForm):
+    class Meta:
+        model = Reply
+        fields = ['content', 'file']

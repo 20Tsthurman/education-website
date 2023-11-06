@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Discussions</h1>
+
+<!-- Displaying the form to create a new discussion -->
+{% if is_creating_discussion %}
+    <h2>Create a New Discussion</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ discussion_form.as_p }}
+        <button type="submit">Post Discussion</button>
+    </form>
+{% endif %}
+
+<!-- Displaying all discussions -->
+<h2>Recent Discussions</h2>
+<ul>
+    {% for discussion in discussions %}
+        <li>
+            <a href="{% url 'view_discussion' discussion.id %}">{{ discussion.title }}</a>
+            <p>{{ discussion.content | truncatewords:20 }}</p>
+            <small>Started by {{ discussion.teacher }} on {{ discussion.created_at }}</small>
+            
+            <!-- Delete link for each discussion that the current user has created -->
+            {% if user.is_authenticated and user == discussion.teacher %}
+                <a href="{% url 'delete_discussion' discussion.id %}">Delete this Discussion</a>
+            {% endif %}
+        </li>
+    {% empty %}
+        <li>No discussions to show.</li>
+    {% endfor %}
+</ul>
+
+<!-- Displaying the form to post a reply (if viewing a discussion) -->
+{% if is_viewing_discussion %}
+    <h2>Reply to Discussion</h2>
+    <form method="post" action="{% url 'view_discussion' discussion.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ reply_form.as_p }}
+        <button type="submit">Post Reply</button>
+    </form>    
+{% endif %}
+
+{% endblock %}

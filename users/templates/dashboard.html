@@ -15,6 +15,11 @@
         {% endfor %}
         </ul>
         
+        <!-- Link to the discussions page for teachers -->
+        <h2>Discussions</h2>
+        <p>Participate in community discussions or start a new topic.</p>
+        <a href="{% url 'combined_discussions' %}">Go to Discussions</a>
+        
     {% elif user.user_type == "student" %}
         <h2>Courses You Are Enrolled In</h2>
         <ul>
@@ -22,6 +27,11 @@
             <li>{{ course.name }}</li>
         {% endfor %}
         </ul>
+        
+        <!-- Link to the discussions page for students -->
+        <h2>Discussions</h2>
+        <p>Join the discussion or see what others are talking about.</p>
+        <a href="{% url 'combined_discussions' %}">Go to Discussions</a>
     {% endif %}
 
     <a href="{% url 'logout' %}">Logout</a>

@@ -17,8 +17,9 @@
                 <li><a href="{% url 'about' %}">About</a></li>
                 <li><a href="{% url 'contact' %}">Contact</a></li>
                 {% if user.is_authenticated %}
-                    <li><a href="{% url 'courses:my_courses' %}">My Courses</a></li>  <!-- Add this line -->
+                    <li><a href="{% url 'courses:my_courses' %}">My Courses</a></li>
                     <li><a href="{% url 'logout' %}">Logout</a></li>
+                    <li><a href="{% url 'combined_discussions' %}">Discussions</a></li>
                 {% else %}
                     <li><a href="{% url 'login' %}">Login</a></li>
                 {% endif %}
@@ -26,7 +27,9 @@
         </nav>
     </header>
     <main>
-        {% block content %}{% endblock %}
+        {% block content %}
+        <!-- This is where the content from child templates will be injected -->
+        {% endblock %}
     </main>
     <footer>
         <p>&copy; 2023 Your Site Name. All rights reserved.</p>

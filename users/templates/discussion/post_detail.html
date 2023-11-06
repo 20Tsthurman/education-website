@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ discussion.title }}</h1>
+<p>{{ discussion.content }}</p>
+<small>Started by {{ discussion.teacher }} on {{ discussion.created_at }}</small>
+
+<!-- Check if there's an uploaded file and display it -->
+{% if discussion.upload_file %}
+    <p>Attached file:</p>
+    {% with file_ext=discussion.upload_file.url|cut:"."|last %}
+        {% if file_ext|lower in "jpg jpeg png gif" %}
+            <!-- Display the image -->
+            <img src="{{ discussion.upload_file.url }}" alt="Uploaded image" style="max-width: 600px;"/>
+        {% else %}
+            <!-- Display a link to the file for other file types -->
+            <a href="{{ discussion.upload_file.url }}" target="_blank">Download attached file</a>
+        {% endif %}
+    {% endwith %}
+{% endif %}
+
+<!-- Displaying replies -->
+<h2>Replies</h2>
+<ul>
+    {% for reply in replies %}
+        <li>
+            <p>{{ reply.content }}</p>
+            <small>Replied by {{ reply.user }} on {{ reply.created_at }}</small>
+        </li>
+    {% empty %}
+        <li>No replies yet. Be the first to respond!</li>
+    {% endfor %}
+</ul>
+
+<!-- Displaying the form to post a reply -->
+<h3>Your Reply</h3>
+<form method="post" action="{% url 'post_reply' discussion.id %}">
+    {% csrf_token %}
+    {{ reply_form.as_p }}
+    <button type="submit">Post Reply</button>
+</form>
+
+{% endblock %}

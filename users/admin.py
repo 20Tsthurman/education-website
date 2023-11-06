@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser
 from .forms import CustomUserAdminForm
+from .models import Discussion, Reply
 
 class CustomUserAdmin(UserAdmin):
     form = CustomUserAdminForm
@@ -27,5 +28,21 @@ class CustomUserAdmin(UserAdmin):
                     'fields': ('email', 'user_type', 'password1', 'password2'),
                 }),
             )
+        
+@admin.register(Discussion)
+class DiscussionAdmin(admin.ModelAdmin):
+    list_display = ('title', 'teacher', 'created_at')
+    search_fields = ('title', 'content')
+    list_filter = ('created_at', 'teacher')
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
+
+@admin.register(Reply)
+class ReplyAdmin(admin.ModelAdmin):
+    list_display = ('discussion', 'user', 'created_at')
+    search_fields = ('content',)
+    list_filter = ('created_at', 'user')
+    date_hierarchy = 'created_at'
+    ordering = ('-created_at',)
 
 admin.site.register(CustomUser, CustomUserAdmin)

@@ -45,34 +45,32 @@
             {% endfor %}
         </ul>
 
-        <!-- Gradebook -->
-        <h3>Gradebook</h3>
+<!-- Gradebook -->
+<h3>Gradebook</h3>
 <table style="width:100%; border-collapse: collapse;">
     <thead>
         <tr>
-            <th style="width:5%;">Student</th>
-            <th style="width:5%;">Assignment/Quiz</th>
-            <th style="width:10%; text-align:right;">Grade</th>
-            <th style="width:10%; text-align:right;">Attempt Number</th>
+            <th style="width:20%;">Student</th>
+            <th style="width:40%;">Assignment/Quiz</th>
+            <th style="width:40%; text-align:right;">Best Grade</th>
         </tr>
     </thead>
     <tbody>
-        {% for grade in grades %}
+        {% for item in best_grades %}
             <tr>
-                <td>{{ grade.student }}</td>
-                <td>
-                    {% if grade.quiz %}
-                        Quiz: {{ grade.quiz.title }}
-                    {% elif grade.assignment %}
-                        Assignment: {{ grade.assignment.title }}
-                    {% endif %}
-                </td>
-                <td style="text-align:right;">{{ grade.grade }}</td>
-                <td style="text-align:right;">{{ grade.attempt_number }}</td>
+                <td>{{ item.attempt__student__email }}</td>
+                <td>{{ item.attempt__quiz__title }}</td>
+                <td style="text-align:right;">{{ item.best_grade }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3">No grades recorded.</td>
             </tr>
         {% endfor %}
-    </tbody>
+    </tbody>    
 </table>
+
+
         
     {% else %}
         <!-- For students, list the lessons they can view -->
@@ -90,39 +88,33 @@
         <ul>
             {% for quiz in course.quizzes.all %}
                 <li>
-                    <a href="{% url 'students:take_quiz' quiz.id %}">{{ quiz.title }}</a>
+                    <a href="{% url 'students:take_quiz' quiz.id 1 %}">{{ quiz.title }}</a>
                 </li>
             {% endfor %}
         </ul>
 
+
         <!-- Student Grades -->
-        <h3>Your Grades</h3>
+        <h3>Your Best Grades</h3>
         <table>
             <thead>
                 <tr>
                     <th>Assignment/Quiz</th>
-                    <th>Grade</th>
-                    <th>Attempt Number</th>
+                    <th>Best Grade</th>
                 </tr>
             </thead>
             <tbody>
-                {% for grade in grades %}
+                {% for item in best_grades %}
                     <tr>
-                        <td>
-                            {% if grade.quiz %}
-                                Quiz: {{ grade.quiz.title }}
-                            {% else %}
-                                Assignment: {{ grade.assignment.title }}
-                            {% endif %}
-                        </td>
-                        <td>{{ grade.grade }}</td>
-                        <td>{{ grade.attempt_number }}</td>
+                         <td>{{ item.attempt__quiz__title }}</td>
+                         <td>{{ item.best_grade }}%</td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="3">No grades recorded.</td>
+                         <td colspan="2">No grades recorded.</td>
                     </tr>
-                {% endfor %}
+{% endfor %}
+
             </tbody>
         </table>
     {% endif %}

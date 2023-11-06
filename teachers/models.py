@@ -23,15 +23,29 @@ class Quiz(models.Model):
     
     def get_absolute_url(self):
         return reverse('teachers:quiz_detail', kwargs={'quiz_id': self.id})
+    
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    text = models.CharField(max_length=1000)
 
-class Grade(models.Model):
+    def __str__(self):
+        return self.text
+    
+class Attempt(models.Model):
     student = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    attempt_number = models.PositiveIntegerField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    final_grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('student', 'quiz', 'attempt_number')
+
+class Grade(models.Model):
+    attempt = models.ForeignKey(Attempt, on_delete=models.CASCADE, null=True)
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, null=True)
     grade = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    attempt_number = models.PositiveIntegerField(default=1)
-    # Add more fields as needed
 
 class LessonEnrollment(models.Model):
     lesson = models.ForeignKey('courses.Lesson', on_delete=models.CASCADE)  # Ensure this line stays as is
@@ -40,13 +54,6 @@ class LessonEnrollment(models.Model):
 class AssignmentEnrollment(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
     student = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
-
-class Question(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
-    text = models.CharField(max_length=1000)
-
-    def __str__(self):
-        return self.text
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
@@ -61,7 +68,9 @@ class Response(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
+    attempt = models.ForeignKey(Attempt, on_delete=models.CASCADE, null=True)
 
 class QuizEnrollment(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     student = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE)
+

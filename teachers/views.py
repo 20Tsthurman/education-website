@@ -5,7 +5,7 @@ from courses.models import Course, Enrollment, Lesson
 from courses.forms import LessonForm
 from django.contrib.auth.decorators import login_required
 from teachers.models import Teacher
-from .forms import ChoiceFormSet, TeacherEnrollmentForm
+from .forms import ChoiceFormSet
 from teachers.forms import CourseSelectionForm, EnrollmentForm
 from .models import Question
 from .forms import QuizForm 
@@ -91,17 +91,17 @@ def course_detail(request, course_id):
     
     enrollments = Enrollment.objects.filter(course=course)
     students = [enrollment.student for enrollment in enrollments]
-    grades = Grade.objects.filter(Q(quiz__course=course) | Q(assignment__course=course))
-    
-    return render(
-        request,
-        'courses/course_detail.html',
-        {
-            'course': course,
-            'students': students,
-            'grades': grades
-        }
-    )
+    grades = Grade.objects.filter(
+        Q(attempt__quiz__course=course) | Q(assignment__course=course)
+    ).select_related('attempt__student', 'attempt__quiz', 'assignment')
+
+    context = {
+        'course': course,
+        'students': students,
+        'grades': grades
+    }
+    return render(request, 'courses/course_detail.html', context)
+
 
 @login_required
 def create_lesson(request, course_id):
@@ -172,24 +172,23 @@ def create_question(request, quiz_id):
         return HttpResponseForbidden("You don't have permission to access this page.")
     if request.method == 'POST':
         question_form = QuestionForm(request.POST)
-        choice_formset = ChoiceFormSet(request.POST, prefix='choices')
-        if question_form.is_valid() and choice_formset.is_valid():
+        if question_form.is_valid():
             question = question_form.save(commit=False)
             question.quiz = quiz
             question.save()
-            for choice_form in choice_formset:
-                choice = choice_form.save(commit=False)
-                choice.question = question
-                choice.save()
-            return redirect('teachers:quiz_detail', quiz_id=quiz.id)
+            choice_formset = ChoiceFormSet(request.POST, instance=question)  # updated reference
+            if choice_formset.is_valid():
+                choice_formset.save()
+                return redirect('teachers:quiz_detail', quiz_id=quiz.id)
     else:
         question_form = QuestionForm()
-        choice_formset = ChoiceFormSet(prefix='choices')
+        choice_formset = ChoiceFormSet(instance=Question())  # updated reference
     return render(
         request,
         'teachers/create_question.html',
         {'question_form': question_form, 'choice_formset': choice_formset, 'quiz': quiz}
     )
+
 
 @login_required
 def edit_quiz(request, quiz_id):

@@ -1,9 +1,9 @@
 from django import forms
+from django.forms import modelformset_factory, inlineformset_factory
 from students.models import Student
 from courses.models import Course, Enrollment
-from .models import Question
 from .models import Question, Choice, Quiz
-from django.forms import modelformset_factory
+
 
 class CourseSelectionForm(forms.Form):
     course = forms.ModelChoiceField(queryset=Course.objects.all())
@@ -22,7 +22,10 @@ class ChoiceForm(forms.ModelForm):
         model = Choice
         fields = ['text', 'is_correct']
 
-ChoiceFormSet = modelformset_factory(Choice, fields=('text', 'is_correct'), extra=4, max_num=4)
+ChoiceFormSet = inlineformset_factory(
+    Question, Choice, fields=('text', 'is_correct'), extra=4, max_num=4
+)  # renamed formset
+
 
 class QuestionForm(forms.ModelForm):
     class Meta:

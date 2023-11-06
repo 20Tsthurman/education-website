@@ -7,7 +7,11 @@
 {% else %}
     <p>You have {{ remaining_attempts }} attempts remaining.</p>
 {% endif %}
-{% for grade in grades %}
-    <p>Attempt {{ grade.attempt_number }}: {{ grade.grade }}%</p>
+{% for attempt_number in attempt_numbers %}
+    <div class="attempt">
+        Attempt {{ attempt_number }}: {{ average_scores.attempt_number|default:0|floatformat:2 }}%
+        <a href="{% url 'students:review_test' quiz_id=quiz.id attempt_number=attempt_number %}" class="btn btn-primary">Review Test</a>
+    </div>
 {% endfor %}
 {% endblock %}
+

@@ -1,14 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h1>Your Grades</h1>
-  {% for grade in grades %}
-    <div>
-      {% if grade.quiz %}
-        <p>Quiz: {{ grade.quiz.title }} - {{ grade.grade }}%</p>
-      {% elif grade.assignment %}
-        <p>Assignment: {{ grade.assignment.title }} - {{ grade.grade }}%</p>
-      {% endif %}
-    </div>
-  {% endfor %}
+  <h1>Your Best Grades</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Assignment/Quiz</th>
+        <th>Best Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in best_grades %}
+        <tr>
+          <td>{{ item.assignment_or_quiz_title }}</td>
+          <td>{{ item.best_grade }}%</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

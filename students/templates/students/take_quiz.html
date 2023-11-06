@@ -1,3 +1,4 @@
+<!-- students/templates/students/take_quiz.html -->
 {% extends "base.html" %}
 
 {% block content %}
@@ -5,15 +6,14 @@
     <h1 class="my-4 text-center">Take Quiz: {{ quiz.title }}</h1>
     <form method="post">
         {% csrf_token %}
-        {% for question, form in form_question_pairs %}
         <div class="card mb-4 shadow">
             <div class="card-header bg-primary text-white">
                 {{ question.text }}
             </div>
             <div class="card-body">
-                {% for choice in form.choice.field.queryset %}
+                {% for choice in question.choice_set.all %}
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="{{ form.choice.html_name }}" id="choice{{ choice.id }}" value="{{ choice.id }}">
+                    <input class="form-check-input" type="radio" name="choice" id="choice{{ choice.id }}" value="{{ choice.id }}">
                     <label class="form-check-label" for="choice{{ choice.id }}">
                         {{ choice.text }}
                     </label>
@@ -21,9 +21,8 @@
                 {% endfor %}
             </div>
         </div>
-        {% endfor %}
         <div class="text-center mb-4">
-            <button type="submit" class="btn btn-success btn-lg">Submit</button>
+            <button type="submit" class="btn btn-success btn-lg">Next</button>
         </div>
     </form>
 </div>

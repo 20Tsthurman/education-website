@@ -9,8 +9,9 @@ from django.contrib.auth.decorators import login_required
 from teachers.models import Teacher 
 from .forms import EnrollmentForm
 from courses.models import Course
-from teachers.models import Grade
+from teachers.models import Grade, Attempt
 from django.db.models import Q
+from django.db.models import Max
 
 @login_required
 def create_course(request):
@@ -52,29 +53,41 @@ def course_detail(request, pk):
     enrollments = Enrollment.objects.filter(course=course)
     students = [enrollment.student for enrollment in enrollments]
     assignments = course.assignments.all()
-    
-    # Determine user type and fetch grades accordingly
+
     if request.user.user_type == 'teacher':
-        grades = Grade.objects.filter(
-            Q(student__in=students, quiz__course=course) |
-            Q(student__in=students, assignment__course=course)
-        )
-    else:  # Assuming the only other user type is 'student'
-        grades = Grade.objects.filter(
-            Q(quiz__course=course) | Q(assignment__course=course),
-            student=request.user
-        )
+    # For teachers, fetch the best grades for each quiz and assignment for each student
+        best_grades = Grade.objects.filter(
+        attempt__quiz__course=course
+        ).values(
+        'attempt__student__email', 'attempt__quiz__title'
+     ).annotate(
+        best_grade=Max('grade')
+     ).order_by('attempt__student__email', 'attempt__quiz__title')
+    elif request.user.user_type == 'student':
+        # For students, fetch the best grade for each quiz and assignment in the course
+        best_grades = Grade.objects.filter(
+            attempt__quiz__course=course,
+            attempt__student=request.user
+        ).values(
+            'attempt__quiz__title'
+        ).annotate(
+            best_grade=Max('grade')
+        ).order_by('attempt__quiz__title')
+    else:
+        # Handle other user types if necessary or set best_grades to None
+        best_grades = None
 
     return render(
         request,
         'courses/course_detail.html',
-        {
-            'course': course,
-            'students': students,
-            'assignments': assignments,
-            'grades': grades,
-        }
-    )
+         {
+             'course': course,
+             'students': students,
+             'assignments': assignments,
+             'best_grades': best_grades,  # Include this in the context
+         }
+)
+
 
 
 @login_required

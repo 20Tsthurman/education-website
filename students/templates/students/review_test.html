@@ -1,0 +1,9 @@
+<!-- Review Test: Test2 Template -->
+<h1>Review Test: {{ quiz.title }}</h1>
+{% for grade in grades %}
+    <div class="question-review">
+        <p>Question: {{ grade.question.text }}</p>
+        <p>Your Answer: {{ grade.choice.text }}</p>
+        <p>Correct Answer: {{ grade.question.get_correct_choice.text }}</p>
+    </div>
+{% endfor %}

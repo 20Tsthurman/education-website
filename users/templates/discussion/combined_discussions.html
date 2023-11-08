@@ -1,45 +1,75 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Discussions</h1>
+<div class="container">
+    <div class="row">
+        <!-- Left Column (Discussions List) -->
+        <div class="col-md-8">
+            <h1 class="mt-4 mb-4">Discussions</h1>
 
-<!-- Displaying the form to create a new discussion -->
-{% if is_creating_discussion %}
-    <h2>Create a New Discussion</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ discussion_form.as_p }}
-        <button type="submit">Post Discussion</button>
-    </form>
-{% endif %}
-
-<!-- Displaying all discussions -->
-<h2>Recent Discussions</h2>
-<ul>
-    {% for discussion in discussions %}
-        <li>
-            <a href="{% url 'view_discussion' discussion.id %}">{{ discussion.title }}</a>
-            <p>{{ discussion.content | truncatewords:20 }}</p>
-            <small>Started by {{ discussion.teacher }} on {{ discussion.created_at }}</small>
-            
-            <!-- Delete link for each discussion that the current user has created -->
-            {% if user.is_authenticated and user == discussion.teacher %}
-                <a href="{% url 'delete_discussion' discussion.id %}">Delete this Discussion</a>
+            <!-- Create a New Discussion Form -->
+            {% if is_creating_discussion %}
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h2>Create a New Discussion</h2>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ discussion_form.as_p }}
+                            <button type="submit" class="btn btn-primary" name="submit_discussion">Post Discussion</button>
+                        </form>
+                    </div>
+                </div>
             {% endif %}
-        </li>
-    {% empty %}
-        <li>No discussions to show.</li>
-    {% endfor %}
-</ul>
 
-<!-- Displaying the form to post a reply (if viewing a discussion) -->
-{% if is_viewing_discussion %}
-    <h2>Reply to Discussion</h2>
-    <form method="post" action="{% url 'view_discussion' discussion.id %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ reply_form.as_p }}
-        <button type="submit">Post Reply</button>
-    </form>    
-{% endif %}
+            <!-- Search Form -->
+            <form method="get" action="{% url 'combined_discussions' %}" class="mb-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search_query" placeholder="Search discussions...">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-secondary">Search</button>
+                    </div>
+                </div>
+            </form>
 
+            <!-- Recent Discussions List -->
+            <h2>Recent Discussions</h2>
+            {% for discussion in discussions %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title"><a href="{% url 'view_discussion' discussion.id %}">{{ discussion.title }}</a></h5>
+                        <p class="card-text">{{ discussion.content | truncatewords_html:20 }}</p>
+                        <p class="card-text"><small>Started by {{ discussion.teacher }} on {{ discussion.created_at }}</small></p>
+                        
+                        <!-- Delete button for discussions created by the current user -->
+                        {% if user.is_authenticated and user == discussion.teacher %}
+                            <a href="{% url 'delete_discussion' discussion.id %}" class="btn btn-danger btn-sm">Delete</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p>No discussions to show.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Right Column (Reply Form) -->
+        {% if is_viewing_discussion %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h2>Reply to Discussion</h2>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'view_discussion' discussion.id %}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ reply_form.as_p }}
+                            <button type="submit" class="btn btn-info">Post Reply</button>
+                        </form>    
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

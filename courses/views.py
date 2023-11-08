@@ -111,5 +111,14 @@ def enroll_student(request, course_id):
 
 @login_required
 def my_courses(request):
-    enrollments = Enrollment.objects.filter(student=request.user)
-    return render(request, 'courses/my_courses.html', {'enrollments': enrollments})
+    # Check if the user is a teacher
+    if hasattr(request.user, 'teacher_profile'):  # Assuming teacher profile is linked to user
+        # Get courses where the user is the teacher
+        courses_taught = Course.objects.filter(teacher=request.user)
+        # You can pass 'courses_taught' directly or make it part of 'enrollments'
+        return render(request, 'courses/my_courses.html', {'courses_taught': courses_taught})
+    else:
+        # Otherwise, assume the user is a student
+        enrollments = Enrollment.objects.filter(student=request.user)
+        return render(request, 'courses/my_courses.html', {'enrollments': enrollments})
+

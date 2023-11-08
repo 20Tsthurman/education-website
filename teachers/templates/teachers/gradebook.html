@@ -2,25 +2,39 @@
 
 {% block content %}
   <h1>Gradebook</h1>
-  
-  <h2>Quizzes</h2>
-  {% for quiz in quizzes %}
-    <h3>{{ quiz.title }}</h3>
-    {% for grade in grades %}
-      {% if grade.quiz == quiz %}
-        <p>{{ grade.student.username }}: {{ grade.grade }}%</p>
-      {% endif %}
-    {% endfor %}
-  {% endfor %}
-  
-  <h2>Assignments</h2>
-  {% for assignment in assignments %}
-    <h3>{{ assignment.title }}</h3>
-    {% for grade in grades %}
-      {% if grade.assignment == assignment %}
-        <p>{{ grade.student.username }}: {{ grade.grade }}%</p>
-      {% endif %}
-    {% endfor %}
-  {% endfor %}
+
+  <!-- Display student grades for quizzes and assignments -->
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Assignment/Quiz</th>
+        <th class="text-right">Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student_data in student_grades %}
+        {% for grade in student_data.quiz_grades %}
+          <tr>
+            <td>{{ student_data.student.username }}</td>
+            <td>{{ grade.quiz.title }}</td>
+            <td class="text-right">{{ grade.grade }}%</td>
+          </tr>
+        {% endfor %}
+        {% for grade in student_data.assignment_grades %}
+          <tr>
+            <td>{{ student_data.student.username }}</td>
+            <td>{{ grade.assignment.title }}</td>
+            <td class="text-right">{{ grade.grade }}%</td>
+          </tr>
+        {% endfor %}
+      {% empty %}
+        <tr>
+          <td colspan="3">No grades recorded.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <!-- End display student grades -->
   
 {% endblock %}

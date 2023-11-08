@@ -15,6 +15,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .forms import DiscussionForm, ReplyForm
 from .models import Discussion, Reply
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+
 
 
 @login_required
@@ -110,22 +112,21 @@ class CustomPasswordChangeDoneView(PasswordChangeDoneView):
         return context
     
 def combined_discussions(request):
-    discussions = Discussion.objects.all()
     is_creating_discussion = True
     is_viewing_discussion = False
-    form = None  # Initialize the form variable
+    form = DiscussionForm()  # Initialize the form for GET requests
+    search_query = request.GET.get('search_query', '')  # Retrieve the search term from the GET request
 
     if request.method == 'POST':
-    # Create a DiscussionForm instance
-        form = DiscussionForm(request.POST, request.FILES)
-        if form.is_valid():
-            discussion = form.save(commit=False)
-            discussion.teacher = request.user
-            discussion.save()
-            return redirect('combined_discussions')
-        
-    
-        elif 'submit_reply' in request.POST:  # Button name in your reply form
+        if 'submit_discussion' in request.POST:
+            form = DiscussionForm(request.POST, request.FILES)
+            if form.is_valid():
+                discussion = form.save(commit=False)
+                discussion.teacher = request.user
+                discussion.save()
+                return redirect('combined_discussions')
+
+        elif 'submit_reply' in request.POST:
             discussion_id = request.POST.get('discussion_id')
             discussion = get_object_or_404(Discussion, pk=discussion_id)
             reply_form = ReplyForm(request.POST, request.FILES)
@@ -135,7 +136,7 @@ def combined_discussions(request):
                 reply.user = request.user
                 reply.save()
                 return redirect('view_discussion', discussion_id=discussion.id)
-
+                
         elif 'reply_form' in request.POST:
             form = ReplyForm(request.POST)
             if form.is_valid():
@@ -148,25 +149,29 @@ def combined_discussions(request):
                 return redirect('combined_discussions')
 
     else:
-        form = DiscussionForm()  # Initialize the form for GET requests
+        discussions = Discussion.objects.all()
+        if search_query:
+            discussions = discussions.filter(
+                Q(title__icontains=search_query) |
+                Q(content__icontains=search_query) |
+                Q(topic__icontains=search_query)
+            )
 
-    # Check if the URL has a discussion_id parameter (i.e., a specific discussion is being viewed)
     if 'discussion_id' in request.GET:
-        discussion_id = request.GET['discussion_id']
+        discussion_id = request.GET.get('discussion_id')
         discussion = get_object_or_404(Discussion, pk=discussion_id)
         replies = Reply.objects.filter(discussion=discussion)
         is_viewing_discussion = True
-
         context = {
             'discussions': discussions,
             'is_creating_discussion': is_creating_discussion,
             'is_viewing_discussion': is_viewing_discussion,
             'discussion_form': form,
             'reply_form': ReplyForm(),
-            'discussion': discussion,  # Pass the specific discussion to the template
-            'replies': replies,  # Pass the replies associated with the discussion
+            'discussion': discussion,
+            'replies': replies,
+            'search_query': search_query,
         }
-
         return render(request, 'users/templates/discussion/combined_discussions.html', context)
 
     context = {
@@ -175,6 +180,7 @@ def combined_discussions(request):
         'is_viewing_discussion': is_viewing_discussion,
         'discussion_form': form,
         'reply_form': ReplyForm(),
+        'search_query': search_query,
     }
 
     return render(request, 'discussion/combined_discussions.html', context)

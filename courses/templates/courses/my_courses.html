@@ -1,15 +1,32 @@
-<!-- courses/templates/courses/my_courses.html -->
 {% extends "base.html" %}
 
 {% block content %}
 <h1>My Courses</h1>
-<ul>
-    {% for enrollment in enrollments %}
-        <li>
-            <a href="{% url 'courses:course_detail' enrollment.course.id %}">
-                {{ enrollment.course.name }}
-            </a>
-        </li>
-    {% endfor %}
-</ul>
+<!-- If the user is a teacher, display the courses they teach -->
+{% if courses_taught %}
+    <h2>Courses I Teach</h2>
+    <ul>
+        {% for course in courses_taught %}
+            <li>
+                <a href="{% url 'courses:course_detail' course.id %}">
+                    {{ course.name }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<!-- If the user is a student, display the courses they are enrolled in -->
+{% if enrollments %}
+    <h2>Courses I'm Enrolled In</h2>
+    <ul>
+        {% for enrollment in enrollments %}
+            <li>
+                <a href="{% url 'courses:course_detail' enrollment.course.id %}">
+                    {{ enrollment.course.name }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
 {% endblock %}

@@ -23,8 +23,8 @@
     {% elif user.user_type == "student" %}
         <h2>Courses You Are Enrolled In</h2>
         <ul>
-        {% for course in courses_enrolled %}
-            <li>{{ course.name }}</li>
+        {% for enrollment in enrollments %} <!-- Change to 'enrollments' here -->
+            <li>{{ enrollment.course.name }}</li> <!-- Access the course from enrollment -->
         {% endfor %}
         </ul>
         

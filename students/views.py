@@ -7,7 +7,8 @@ from teachers.models import Attempt, Grade, Quiz
 from .forms import AnswerForm
 from django.contrib import messages
 from django.db.models import Avg
-from django.db.models import Max
+from django.utils import timezone
+from django.db.models import Max, Q
 
 @login_required
 def student_dashboard(request):
@@ -23,18 +24,10 @@ def lesson_detail(request, lesson_id):
 
 @login_required
 def view_grades(request):
-    best_quizzes = Grade.objects.filter(student=request.user, quiz__isnull=False)\
-                                .values('quiz__title')\
-                                .annotate(best_grade=Max('grade'))\
-                                .order_by('quiz')
-
-    best_assignments = Grade.objects.filter(student=request.user, assignment__isnull=False)\
-                                    .values('assignment__title')\
-                                    .annotate(best_grade=Max('grade'))\
-                                    .order_by('assignment')
-
-    # Combine the two querysets into one
-    best_grades = list(best_quizzes) + list(best_assignments)
+    # Retrieve the best grades for both quizzes and assignments
+    best_grades = Grade.objects.filter(
+        Q(student=request.user, quiz__isnull=False) | Q(student=request.user, assignment__isnull=False)
+    ).values('quiz__title', 'assignment__title').annotate(best_grade=Max('grade'))
 
     return render(
         request,
@@ -48,75 +41,49 @@ def take_quiz(request, quiz_id, question_number):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = quiz.question_set.all()
     total_questions = questions.count()
-    teacher = quiz.teacher
 
-    # Get the current attempt number or initialize it
-    current_attempts = Attempt.objects.filter(student=request.user, quiz=quiz).count()
-    if 'current_attempt_number' not in request.session:
-        request.session['current_attempt_number'] = current_attempts + 1
-    attempt_number = request.session['current_attempt_number']
+    # Get the current or latest attempt for the student
+    attempt = Attempt.objects.filter(student=request.user, quiz=quiz).order_by('-attempt_number').first()
 
-    # Check if max attempts have been reached and redirect if so
-    if current_attempts >= 3:
-        messages.error(request, "You have reached the maximum number of attempts for this quiz.")
-        return redirect('students:quiz_results', quiz_id=quiz_id)
+    # If no attempt exists or the latest is marked as completed, start a new one
+    if not attempt or attempt.is_completed:
+        attempt_number = 1 if not attempt else attempt.attempt_number + 1
+        attempt = Attempt.objects.create(
+            student=request.user,
+            quiz=quiz,
+            attempt_number=attempt_number,
+            is_completed=False  # This needs to be added to the Attempt model
+        )
+    else:
+        # Increment the attempt number for a new attempt, if not completed
+        if attempt.attempt_number > 3:
+            messages.error(request, "You have reached the maximum number of attempts for this quiz.")
+            return redirect('students:quiz_results', quiz_id=quiz_id)
 
-    if question_number > total_questions:
-    # Calculate final grade based on correct answers
-        correct_answers = Grade.objects.filter(
-            attempt__quiz=quiz, 
-            attempt__student=request.user, 
-            attempt__attempt_number=attempt_number, 
-            grade=100
-        ).count()
-        final_grade_percentage = (correct_answers / total_questions) * 100
-
-    # Retrieve the attempt instance
-        attempt = Attempt.objects.get(
-            student=request.user, 
-            quiz=quiz, 
-            attempt_number=attempt_number
-         )
-    # Update the final grade for the attempt
-        attempt.final_grade = final_grade_percentage
-        attempt.save()
-
-    # Reset attempt count after finishing the quiz
-        del request.session['current_attempt_number']
-        return redirect('students:quiz_results', quiz_id=quiz_id)
-
+    # Proceed with quiz taking
     question = questions[question_number - 1]
-    form = AnswerForm(question=question)  # Initialize form here for GET requests
-
-    # Create or get attempt outside the POST check to avoid UnboundLocalError
-    attempt, created = Attempt.objects.get_or_create(
-        student=request.user,
-        quiz=quiz,
-        attempt_number=attempt_number
-    )
+    form = AnswerForm(question=question)
 
     if request.method == 'POST':
         form = AnswerForm(request.POST, question=question)
         if form.is_valid():
             choice = form.cleaned_data['choice']
-            # Create a Grade instance for the current attempt and question
-            Grade.objects.create(
+            Grade.objects.update_or_create(
                 attempt=attempt,
-                assignment=None,  # Assuming this is a quiz, not an assignment
-                grade=100 if choice.is_correct else 0,
-                teacher=teacher
+                question=question,
+                defaults={'grade': 100 if choice.is_correct else 0}
             )
-
             next_question_number = question_number + 1
+            
+            # Check if it's the last question and mark the attempt as completed
             if next_question_number > total_questions:
-                # Redirect to process the final grade calculation
-                return redirect('students:take_quiz', quiz_id=quiz_id, question_number=question_number+1)
+                calculate_and_save_final_grade(request, attempt)
+                attempt.is_completed = True
+                attempt.completed_timestamp = timezone.now()
+                attempt.save()
+                return redirect('students:quiz_results', quiz_id=quiz_id)
             else:
-                # Move to the next question
                 return redirect('students:take_quiz', quiz_id=quiz_id, question_number=next_question_number)
-    else:
-        # GET request or form is not valid
-        form = AnswerForm(question=question)
 
     context = {
         'quiz': quiz,
@@ -124,10 +91,16 @@ def take_quiz(request, quiz_id, question_number):
         'form': form,
         'question_number': question_number,
         'total_questions': total_questions,
-        'current_attempt_number': attempt_number,
+        'current_attempt_number': attempt.attempt_number,
     }
     return render(request, 'students/take_quiz.html', context)
 
+def calculate_and_save_final_grade(request, attempt):
+    correct_answers = attempt.grade_set.filter(grade=100).count()
+    final_grade_percentage = (correct_answers / attempt.quiz.question_set.count()) * 100
+    attempt.final_grade = final_grade_percentage
+    attempt.save()
+    pass
 
 
 def course_quizzes(request, course_id):

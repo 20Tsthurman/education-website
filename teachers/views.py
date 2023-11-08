@@ -5,6 +5,7 @@ from courses.models import Course, Enrollment, Lesson
 from courses.forms import LessonForm
 from django.contrib.auth.decorators import login_required
 from teachers.models import Teacher
+from django.contrib.auth.models import User
 from .forms import ChoiceFormSet
 from teachers.forms import CourseSelectionForm, EnrollmentForm
 from .models import Question
@@ -132,9 +133,13 @@ def gradebook(request):
     if not hasattr(request.user, 'teacher'):
         return redirect('some_error_page')  # Replace with your error page
 
-    grades = Grade.objects.filter(teacher=request.user.teacher)
-    quizzes = Quiz.objects.filter(teacher=request.user.teacher)
-    assignments = Assignment.objects.filter(teacher=request.user.teacher)
+    teacher = request.user.teacher
+    enrolled_students = teacher.user.student_set.all()  # Get enrolled students of the teacher
+    
+    # Query grades for enrolled students
+    grades = Grade.objects.filter(student__in=enrolled_students)
+    quizzes = Quiz.objects.filter(teacher=teacher)
+    assignments = Assignment.objects.filter(teacher=teacher)
     
     return render(
         request,

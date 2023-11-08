@@ -12,7 +12,13 @@
     <tbody>
       {% for item in best_grades %}
         <tr>
-          <td>{{ item.assignment_or_quiz_title }}</td>
+          <td>
+            {% if item.quiz__title %}
+              Quiz: {{ item.quiz__title }}
+            {% else %}
+              Assignment: {{ item.assignment__title }}
+            {% endif %}
+          </td>
           <td>{{ item.best_grade }}%</td>
         </tr>
       {% endfor %}

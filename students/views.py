@@ -24,16 +24,20 @@ def lesson_detail(request, lesson_id):
 
 @login_required
 def view_grades(request):
-    # Retrieve the best grades for both quizzes and assignments
-    best_grades = Grade.objects.filter(
-        Q(student=request.user, quiz__isnull=False) | Q(student=request.user, assignment__isnull=False)
-    ).values('quiz__title', 'assignment__title').annotate(best_grade=Max('grade'))
+    # Retrieve the best final grade for each quiz attempt
+    best_grades = Attempt.objects.filter(
+        student=request.user
+    ).order_by('quiz', '-final_grade').distinct('quiz').values(
+        'quiz__title', 
+        'final_grade'
+    )
 
     return render(
         request,
         'students/view_grades.html',
         {'best_grades': best_grades}
     )
+
 
 
 @login_required
@@ -95,12 +99,14 @@ def take_quiz(request, quiz_id, question_number):
     }
     return render(request, 'students/take_quiz.html', context)
 
-def calculate_and_save_final_grade(request, attempt):
-    correct_answers = attempt.grade_set.filter(grade=100).count()
-    final_grade_percentage = (correct_answers / attempt.quiz.question_set.count()) * 100
-    attempt.final_grade = final_grade_percentage
+def calculate_and_save_final_grade(attempt):
+    # Calculate the final grade based on the correct answers
+    correct_answers_count = Grade.objects.filter(attempt=attempt, grade=100).count()
+    total_questions = attempt.quiz.question_set.count()
+    final_grade = (correct_answers_count / total_questions) * 100
+    attempt.final_grade = final_grade
     attempt.save()
-    pass
+
 
 
 def course_quizzes(request, course_id):

@@ -17,7 +17,7 @@
         {% for grade in student_data.quiz_grades %}
           <tr>
             <td>{{ student_data.student.username }}</td>
-            <td>{{ grade.quiz.title }}</td>
+            <td>{{ grade.attempt.quiz.title }}</td>
             <td class="text-right">{{ grade.grade }}%</td>
           </tr>
         {% endfor %}

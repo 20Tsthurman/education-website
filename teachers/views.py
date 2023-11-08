@@ -8,7 +8,7 @@ from teachers.models import Teacher
 from django.contrib.auth.models import User
 from .forms import ChoiceFormSet
 from teachers.forms import CourseSelectionForm, EnrollmentForm
-from .models import Question
+from .models import Attempt, Question
 from .forms import QuizForm 
 from .forms import QuestionForm
 from django.db import transaction
@@ -88,20 +88,28 @@ def delete_lesson(request, lesson_id):
 def course_detail(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     if not hasattr(request.user, 'teacher') or request.user.teacher != course.teacher:
-        return redirect('some_error_page')  # Replace with your error page
-    
-    enrollments = Enrollment.objects.filter(course=course)
-    students = [enrollment.student for enrollment in enrollments]
-    grades = Grade.objects.filter(
-        Q(attempt__quiz__course=course) | Q(assignment__course=course)
-    ).select_related('attempt__student', 'attempt__quiz', 'assignment')
+        return redirect('some_error_page')  # Replace with your error redirection
 
+    # Fetch quiz attempts for this course
+    quiz_attempts = Attempt.objects.filter(
+        quiz__course=course
+    ).select_related('student', 'quiz')
+
+    # Fetch assignment grades for this course
+    assignment_grades = Grade.objects.filter(
+        assignment__course=course
+    ).select_related('assignment', 'attempt', 'attempt__student')
+
+    # Combine quiz attempts and assignment grades into one list
+    # Note: We can't simply add two querysets of different models, we need to process them separately in the template
     context = {
         'course': course,
-        'students': students,
-        'grades': grades
+        'quiz_attempts': quiz_attempts,
+        'assignment_grades': assignment_grades,
     }
     return render(request, 'courses/course_detail.html', context)
+
+
 
 
 @login_required
@@ -134,18 +142,35 @@ def gradebook(request):
         return redirect('some_error_page')  # Replace with your error page
 
     teacher = request.user.teacher
-    enrolled_students = teacher.user.student_set.all()  # Get enrolled students of the teacher
+    # Fetch all courses taught by the teacher
+    courses = Course.objects.filter(teacher=teacher)
     
-    # Query grades for enrolled students
-    grades = Grade.objects.filter(student__in=enrolled_students)
-    quizzes = Quiz.objects.filter(teacher=teacher)
-    assignments = Assignment.objects.filter(teacher=teacher)
-    
+    # Prepare a list to hold all student grades data
+    student_grades = []
+
+    # Iterate over each course to fetch enrolled students and their grades
+    for course in courses:
+        enrollments = Enrollment.objects.filter(course=course)
+        for enrollment in enrollments:
+            student = enrollment.student
+            # Fetch grades for quizzes and assignments for each student
+            quiz_grades = Grade.objects.filter(attempt__quiz__course=course, attempt__student=student)
+            assignment_grades = Grade.objects.filter(assignment__course=course, assignment__students=student)
+            
+            # Append the student and their grades to the student_grades list
+            student_grades.append({
+                'student': student,
+                'quiz_grades': quiz_grades,
+                'assignment_grades': assignment_grades
+            })
+
+    # Pass the student_grades list to the template
     return render(
         request,
         'teachers/gradebook.html',
-        {'grades': grades, 'quizzes': quizzes, 'assignments': assignments}
+        {'student_grades': student_grades}
     )
+
 
 @login_required
 @transaction.atomic

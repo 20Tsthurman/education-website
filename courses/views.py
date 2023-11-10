@@ -50,22 +50,47 @@ def create_lesson(request, course_id):
 @login_required
 def course_detail(request, pk):
     course = get_object_or_404(Course, pk=pk)
-    enrollments = Enrollment.objects.filter(course=course)
-    students = [enrollment.student for enrollment in enrollments]
-    assignments = course.assignments.all()
+    context = {'course': course}
 
-    if request.user.user_type == 'teacher':
-    # For teachers, fetch the best grades for each quiz and assignment for each student
+    if hasattr(request.user, 'teacher'):
+        # Teacher's view
+        enrollments = course.enrollments.all()
+        students = [enrollment.student for enrollment in enrollments]
+        assignments = course.assignments.all()
+        quizzes = course.quizzes.all()
+
+        # Fetch quiz attempts for this course
+        quiz_attempts = Attempt.objects.filter(
+            quiz__course=course
+        ).select_related('student', 'quiz')
+
+        # Fetch assignment grades for this course
+        assignment_grades = Grade.objects.filter(
+            assignment__course=course
+        ).select_related('assignment', 'attempt', 'attempt__student')
+
+        # Fetch the best grades for each quiz and assignment for each student
         best_grades = Grade.objects.filter(
-        attempt__quiz__course=course
+            attempt__quiz__course=course
         ).values(
-        'attempt__student__email', 'attempt__quiz__title'
-     ).annotate(
-        best_grade=Max('grade')
-     ).order_by('attempt__student__email', 'attempt__quiz__title')
-    elif request.user.user_type == 'student':
-        # For students, fetch the best grade for each quiz and assignment in the course
-        best_grades = Grade.objects.filter(
+            'attempt__student__email', 'attempt__quiz__title'
+        ).annotate(
+            best_grade=Max('grade')
+        ).order_by('attempt__student__email', 'attempt__quiz__title')
+
+        context.update({
+            'students': students,
+            'assignments': assignments,
+            'quizzes': quizzes,
+            'best_grades': best_grades,
+            'quiz_attempts': quiz_attempts,
+            'assignment_grades': assignment_grades,
+        })
+
+    elif hasattr(request.user, 'student'):
+        # Student's view
+        # Fetch the best grade for each quiz and assignment in the course
+        best_quiz_grades = Grade.objects.filter(
             attempt__quiz__course=course,
             attempt__student=request.user
         ).values(
@@ -73,20 +98,28 @@ def course_detail(request, pk):
         ).annotate(
             best_grade=Max('grade')
         ).order_by('attempt__quiz__title')
-    else:
-        # Handle other user types if necessary or set best_grades to None
-        best_grades = None
 
-    return render(
-        request,
-        'courses/course_detail.html',
-         {
-             'course': course,
-             'students': students,
-             'assignments': assignments,
-             'best_grades': best_grades,  # Include this in the context
-         }
-)
+        best_assignment_grades = Grade.objects.filter(
+            attempt__assignment__course=course,
+            attempt__student=request.user
+        ).values(
+            'attempt__assignment__title'
+        ).annotate(
+            best_grade=Max('grade')
+        ).order_by('attempt__assignment__title')
+
+        context.update({
+            'best_quiz_grades': best_quiz_grades,
+            'best_assignment_grades': best_assignment_grades,
+        })
+
+    # Add common context data for both teachers and students
+    lessons = course.lesson_set.all()
+    context.update({
+        'lessons': lessons,
+    })
+
+    return render(request, 'courses/course_detail.html', context)
 
 
 
@@ -105,9 +138,6 @@ def enroll_student(request, course_id):
     else:
         form = EnrollmentForm()
     return render(request, 'courses/enroll_student.html', {'form': form, 'course': course})
-
-
-
 
 @login_required
 def my_courses(request):

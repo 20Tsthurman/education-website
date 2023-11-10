@@ -29,7 +29,7 @@ def view_grades(request):
         student=request.user
     ).order_by('quiz', '-final_grade').distinct('quiz').values(
         'quiz__title', 
-        'final_grade'
+        'final_grade'  # Make sure this matches the field name in your Attempt model
     )
 
     return render(
@@ -37,6 +37,7 @@ def view_grades(request):
         'students/view_grades.html',
         {'best_grades': best_grades}
     )
+
 
 
 
@@ -81,7 +82,7 @@ def take_quiz(request, quiz_id, question_number):
             
             # Check if it's the last question and mark the attempt as completed
             if next_question_number > total_questions:
-                calculate_and_save_final_grade(request, attempt)
+                calculate_and_save_final_grade(attempt)
                 attempt.is_completed = True
                 attempt.completed_timestamp = timezone.now()
                 attempt.save()

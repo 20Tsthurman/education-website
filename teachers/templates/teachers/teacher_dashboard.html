@@ -6,7 +6,7 @@
 <h2>Your Courses:</h2>
 <ul>
     {% for course in courses %}
-    <a href="{% url 'teachers:course_detail' course.id %}">{{ course.name }}</a><br>
+    <a href="{% url 'courses:course_detail' course.id %}">{{ course.name }}</a><br>
     {% endfor %}
 </ul>
 

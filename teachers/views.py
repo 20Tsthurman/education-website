@@ -85,34 +85,6 @@ def delete_lesson(request, lesson_id):
 
 
 @login_required
-def course_detail(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
-    if not hasattr(request.user, 'teacher') or request.user.teacher != course.teacher:
-        return redirect('some_error_page')  # Replace with your error redirection
-
-    # Fetch quiz attempts for this course
-    quiz_attempts = Attempt.objects.filter(
-        quiz__course=course
-    ).select_related('student', 'quiz')
-
-    # Fetch assignment grades for this course
-    assignment_grades = Grade.objects.filter(
-        assignment__course=course
-    ).select_related('assignment', 'attempt', 'attempt__student')
-
-    # Combine quiz attempts and assignment grades into one list
-    # Note: We can't simply add two querysets of different models, we need to process them separately in the template
-    context = {
-        'course': course,
-        'quiz_attempts': quiz_attempts,
-        'assignment_grades': assignment_grades,
-    }
-    return render(request, 'courses/course_detail.html', context)
-
-
-
-
-@login_required
 def create_lesson(request, course_id):
     teacher = get_object_or_404(Teacher, user=request.user)
     course = get_object_or_404(Course, id=course_id, teacher=teacher)

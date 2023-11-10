@@ -52,108 +52,113 @@
                     {% endfor %}
                 </ul>
 
-                <!-- Gradebook Section -->
-                <h3>Gradebook</h3>
-                <!-- Display quiz attempts -->
-                <h4>Quiz Attempts</h4>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Quiz</th>
-                            <th class="text-right">Final Grade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for attempt in quiz_attempts %}
-                            <tr>
-                                <td>{{ attempt.student.email }}</td>
-                                <td>{{ attempt.quiz.title }}</td>
-                                <td class="text-right">{{ attempt.final_grade }}%</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="3">No quiz attempts recorded.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<!-- Gradebook Section -->
+<h3>Gradebook</h3>
+<!-- Display quiz attempts -->
+<h4>Quiz Attempts</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Student</th>
+            <th>Quiz</th>
+            <th class="text-right">Final Grade</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for attempt in quiz_attempts %}
+            <tr>
+                <td>{{ attempt.student.email }}</td>
+                <td>{{ attempt.quiz.title }}</td>
+                <td class="text-right">{{ attempt.final_grade }}%</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3">No quiz attempts recorded.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
-                <!-- Display assignment grades -->
-                <h4>Assignment Grades</h4>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Assignment</th>
-                            <th class="text-right">Grade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for grade in assignment_grades %}
-                            <tr>
-                                <td>{{ grade.attempt.student.email }}</td>
-                                <td>{{ grade.assignment.title }}</td>
-                                <td class="text-right">{{ grade.grade }}%</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="3">No assignment grades recorded.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<!-- Display assignment grades -->
+<h4>Assignment Grades</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Student</th>
+            <th>Assignment</th>
+            <th class="text-right">Grade</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for grade in assignment_grades %}
+            <tr>
+                <td>{{ grade.student.email }}</td>
+                <td>{{ grade.assignment.title }}</td>
+                <td class="text-right">{{ grade.grade }}%</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3">No assignment grades recorded.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %} <!-- End of Teacher specific content -->
 
-            {% else %}
-                <!-- For students, list the lessons they can view -->
-                <h3>Lessons</h3>
-                <ul class="list-group">
-                    {% for lesson in course.lesson_set.all %}
-                        <li class="list-group-item">
-                            <a href="{% url 'students:lesson_detail' lesson.id %}">{{ lesson.title }}</a>
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item">No lessons available.</li>
-                    {% endfor %}
-                </ul>
+{% if request.user.is_student %}
+    <!-- For students, list the lessons they can view -->
+    <h3>Lessons</h3>
+    <ul class="list-group">
+        {% for lesson in lessons %}
+            <li class="list-group-item">
+                <a href="{% url 'students:lesson_detail' lesson.id %}">{{ lesson.title }}</a>
+            </li>
+        {% empty %}
+            <li class="list-group-item">No lessons available.</li>
+        {% endfor %}
+    </ul>
 
-                <!-- For students, list the quizzes they can take -->
-                <h3>Quizzes</h3>
-                <ul class="list-group">
-                    {% for quiz in course.quizzes.all %}
-                        <li class="list-group-item">
-                            <a href="{% url 'students:take_quiz' quiz.id 1 %}">{{ quiz.title }}</a>
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item">No quizzes available.</li>
-                    {% endfor %}
-                </ul>
+    <!-- For students, list the quizzes they can take -->
+    <h3>Quizzes</h3>
+    <ul class="list-group">
+        {% for quiz in quizzes %}
+            <li class="list-group-item">
+                <a href="{% url 'students:take_quiz' quiz.id %}">{{ quiz.title }}</a>
+            </li>
+        {% empty %}
+            <li class="list-group-item">No quizzes available.</li>
+        {% endfor %}
+    </ul>
 
-                <!-- Student Grades -->
-                <h3>Your Grades</h3>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Assignment/Quiz</th>
-                            <th>Grades</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in best_grades %}
-                        <tr>
-                          <td>Quiz: {{ item.quiz__title }}</td>
-                          <td>{{ item.final_grade }}%</td>
-                        </tr>
-                      {% empty %}
-                        <tr>
-                          <td colspan="2">No grades recorded.</td>
-                        </tr>
-                      {% endfor %}
-                      
-                    </tbody>
-                </table>
+    <!-- Student Grades -->
+    <h3>Your Grades</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Quiz/Assignment Title</th>
+                <th>Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for grade in best_quiz_grades %}
+                <tr>
+                    <td>Quiz: {{ grade.attempt__quiz__title }}</td>
+                    <td>{{ grade.best_grade }}%</td>
+                </tr>
+            {% endfor %}
+            {% for grade in best_assignment_grades %}
+                <tr>
+                    <td>Assignment: {{ grade.attempt__assignment__title }}</td>
+                    <td>{{ grade.best_grade }}%</td>
+                </tr>
+            {% endfor %}
+            {% if not best_quiz_grades and not best_assignment_grades %}
+                <tr>
+                    <td colspan="2">No grades recorded.</td>
+                </tr>
             {% endif %}
-        </div>
-    </div>
+        </tbody>
+    </table>
+{% endif %}
 </div>
 {% endblock %}

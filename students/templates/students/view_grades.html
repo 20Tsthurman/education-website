@@ -1,25 +1,24 @@
-{% extends "base.html" %}
+<!-- students/view_grades.html -->
+{% extends 'base.html' %}
 
 {% block content %}
-  <h1>Your Best Grades</h1>
+  <h2>Your Grades</h2>
   <table>
     <thead>
       <tr>
-        <th>Assignment/Quiz</th>
-        <th>Best Grade</th>
+        <th>Quiz Title</th>
+        <th>Grade</th>
       </tr>
     </thead>
     <tbody>
-      {% for item in best_grades %}
+      {% for grade in best_grades %}
         <tr>
-          <td>
-            {% if item.quiz__title %}
-              Quiz: {{ item.quiz__title }}
-            {% else %}
-              Assignment: {{ item.assignment__title }}
-            {% endif %}
-          </td>
-          <td>{{ item.best_grade }}%</td>
+          <td>{{ grade.quiz__title }}</td>
+          <td>{{ grade.final_grade }}%</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="2">No grades available.</td>
         </tr>
       {% endfor %}
     </tbody>

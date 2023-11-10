@@ -25,12 +25,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
     
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)  # Call the "real" save() method.
-        if self.user_type == 'teacher':
-            Teacher = importlib.import_module('teachers.models').Teacher  # Dynamically import the Teacher model
-            Teacher.objects.get_or_create(user=self) 
-
     # User roles
     USER_TYPE_CHOICES = (
         ('student', 'Student'),
@@ -45,6 +39,20 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    @property
+    def is_student(self):
+        return self.user_type == 'student'
+
+    @property
+    def is_teacher(self):
+        return self.user_type == 'teacher'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Call the "real" save() method.
+        if self.user_type == 'teacher':
+            Teacher = importlib.import_module('teachers.models').Teacher  # Dynamically import the Teacher model
+            Teacher.objects.get_or_create(user=self) 
 
 class Discussion(models.Model):
     teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

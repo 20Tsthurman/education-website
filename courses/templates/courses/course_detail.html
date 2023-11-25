@@ -150,36 +150,61 @@
        {% endfor %}
    </ul>
 
-   <!-- Student Grades -->
-   <h3>Your Grades</h3>
-   <table class="table">
-       <thead>
+   <h3>Your Gradebook</h3>
+   <!-- Quiz Grades -->
+   <table class="table table-bordered table-hover">
+       <thead class="thead-light">
            <tr>
                <th>Quiz</th>
-               <th>Grade</th>
+               <th>Attempt Number</th>
+               <th>Completion Status</th>
+               <th class="text-right">Final Grade</th>
            </tr>
        </thead>
        <tbody>
-        {% for grade in best_quiz_grades %}
-        <tr>
-            <td>{{ grade.quiz_title }}</td>
-            <td>{{ grade.best_grade }}%</td>
-        </tr>
-    {% empty %}
-        <tr>
-            <td colspan="2">No quiz grades recorded.</td>
-        </tr>
-    {% endfor %}
-    {% for grade in best_assignment_grades %}
-        <tr>
-            <td>{{ grade.assignment_title }}</td>
-            <td>{{ grade.best_grade }}%</td>
-        </tr>
-    {% empty %}
-        <tr>
-            <td colspan="2">No assignment grades recorded.</td>
-        </tr>
-    {% endfor %}    
+           {% for quiz_title, attempts in student_attempts.items %}
+               {% for attempt in attempts %}
+                   <tr>
+                       <td>{{ quiz_title }}</td>
+                       <td>{{ attempt.attempt_number }}</td>
+                       <td>
+                           {% if attempt.is_completed %}
+                               Completed
+                           {% else %}
+                               In Progress
+                           {% endif %}
+                       </td>                        
+                       <td class="text-right">{{ attempt.final_grade }}%</td>
+                   </tr>
+               {% endfor %}
+           {% empty %}
+               <tr>
+                   <td colspan="4">No quiz attempts recorded.</td>
+               </tr>
+           {% endfor %}
+       </tbody>
+   </table>
+
+   <!-- Assignment Grades -->
+   <h4>Your Assignment Grades</h4>
+   <table class="table">
+       <thead>
+           <tr>
+               <th>Assignment</th>
+               <th class="text-right">Grade</th>
+           </tr>
+       </thead>
+       <tbody>
+           {% for grade in student_assignment_grades %}
+               <tr>
+                   <td>{{ grade.assignment.title }}</td>
+                   <td class="text-right">{{ grade.grade }}%</td>
+               </tr>
+           {% empty %}
+               <tr>
+                   <td colspan="2">No assignment grades recorded.</td>
+               </tr>
+           {% endfor %}
        </tbody>
    </table>
 {% endif %}

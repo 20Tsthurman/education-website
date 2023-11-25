@@ -54,7 +54,6 @@ def course_detail(request, pk):
 
     if hasattr(request.user, 'teacher'):
         # Teacher's view
-        # Fetch enrolled students for the course
         enrollments = course.enrollments.all()
         students = [enrollment.student for enrollment in enrollments]
 
@@ -76,7 +75,6 @@ def course_detail(request, pk):
                 if len(students_attempts[student_email][quiz.title]) < 3:
                     students_attempts[student_email][quiz.title].append(attempt)
 
-        # Update context with both the student roster and the attempts
         context.update({
             'students': students,
             'students_attempts': students_attempts
@@ -85,7 +83,13 @@ def course_detail(request, pk):
     elif hasattr(request.user, 'student'):
         student = request.user.student
 
-        # Fetch best grades for quizzes in this course
+        # Fetch attempts for quizzes in this course
+        student_attempts = {}
+        for quiz in course.quizzes.all():
+            attempts = Attempt.objects.filter(quiz=quiz, student=student).order_by('-timestamp')[:3]
+            student_attempts[quiz.title] = attempts
+
+        # Fetch grades for quizzes and assignments
         best_quiz_grades = Grade.objects.filter(
             attempt__quiz__course=course,
             attempt__student=student
@@ -95,7 +99,6 @@ def course_detail(request, pk):
             best_grade=Max('grade')
         ).order_by('attempt__quiz__title')
 
-        # Fetch best grades for assignments in this course
         best_assignment_grades = Grade.objects.filter(
             attempt__assignment__course=course,
             attempt__student=student
@@ -106,6 +109,7 @@ def course_detail(request, pk):
         ).order_by('attempt__assignment__title')
 
         context.update({
+            'student_attempts': student_attempts,
             'best_quiz_grades': best_quiz_grades,
             'best_assignment_grades': best_assignment_grades,
         })

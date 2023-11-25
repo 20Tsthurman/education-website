@@ -24,21 +24,23 @@ def lesson_detail(request, lesson_id):
 
 @login_required
 def view_grades(request):
-    # Retrieve the best final grade for each quiz attempt
-    best_grades = Attempt.objects.filter(
-        student=request.user
-    ).order_by('quiz', '-final_grade').distinct('quiz').values(
-        'quiz__title', 
-        'final_grade'  # Make sure this matches the field name in your Attempt model
-    )
+    # Retrieve all quizzes that the student has attempted
+    attempted_quizzes = Quiz.objects.filter(attempt__student=request.user).distinct()
 
-    return render(
-        request,
-        'students/view_grades.html',
-        {'best_grades': best_grades}
-    )
+    # Prepare a list to hold the best grade for each quiz
+    best_grades = []
 
+    for quiz in attempted_quizzes:
+        # Get the best grade for the current quiz
+        best_grade = Attempt.objects.filter(student=request.user, quiz=quiz).order_by('-final_grade').first()
 
+        if best_grade:
+            best_grades.append({
+                'quiz_title': quiz.title,
+                'final_grade': best_grade.final_grade
+            })
+
+    return render(request, 'students/view_grades.html', {'best_grades': best_grades})
 
 
 @login_required

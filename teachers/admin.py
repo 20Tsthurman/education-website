@@ -63,3 +63,9 @@ class GradeAdmin(admin.ModelAdmin):
         return obj.teacher.user.email if obj.teacher and obj.teacher.user else 'No teacher'
     get_teacher_email.admin_order_field = 'teacher__user__email'
     get_teacher_email.short_description = 'Teacher Email'
+
+@admin.register(Attempt)
+class AttemptAdmin(admin.ModelAdmin):
+    list_display = ('student', 'quiz', 'attempt_number', 'final_grade', 'is_completed')
+    list_filter = ('student', 'quiz', 'is_completed')
+    search_fields = ('student__email', 'quiz__title')

@@ -54,54 +54,51 @@ def course_detail(request, pk):
 
     if hasattr(request.user, 'teacher'):
         # Teacher's view
+        # Fetch enrolled students for the course
         enrollments = course.enrollments.all()
         students = [enrollment.student for enrollment in enrollments]
-        assignments = course.assignments.all()
+
+        students_attempts = {}
         quizzes = course.quizzes.all()
 
-        # Fetch quiz attempts for this course
-        quiz_attempts = Attempt.objects.filter(
-            quiz__course=course
-        ).select_related('student', 'quiz')
+        for quiz in quizzes:
+            attempts = Attempt.objects.filter(quiz=quiz).select_related('student').order_by('student', '-timestamp')
+            
+            for attempt in attempts:
+                student_email = attempt.student.email
+                if student_email not in students_attempts:
+                    students_attempts[student_email] = {}
 
-        # Fetch assignment grades for this course
-        assignment_grades = Grade.objects.filter(
-            assignment__course=course
-        ).select_related('assignment', 'attempt', 'attempt__student')
+                if quiz.title not in students_attempts[student_email]:
+                    students_attempts[student_email][quiz.title] = []
 
-        # Fetch the best grades for each quiz and assignment for each student
-        best_grades = Grade.objects.filter(
-            attempt__quiz__course=course
-        ).values(
-            'attempt__student__email', 'attempt__quiz__title'
-        ).annotate(
-            best_grade=Max('grade')
-        ).order_by('attempt__student__email', 'attempt__quiz__title')
+                # Limit to latest three attempts
+                if len(students_attempts[student_email][quiz.title]) < 3:
+                    students_attempts[student_email][quiz.title].append(attempt)
 
+        # Update context with both the student roster and the attempts
         context.update({
             'students': students,
-            'assignments': assignments,
-            'quizzes': quizzes,
-            'best_grades': best_grades,
-            'quiz_attempts': quiz_attempts,
-            'assignment_grades': assignment_grades,
+            'students_attempts': students_attempts
         })
 
     elif hasattr(request.user, 'student'):
-        # Student's view
-        # Fetch the best grade for each quiz and assignment in the course
+        student = request.user.student
+
+        # Fetch best grades for quizzes in this course
         best_quiz_grades = Grade.objects.filter(
             attempt__quiz__course=course,
-            attempt__student=request.user
+            attempt__student=student
         ).values(
             'attempt__quiz__title'
         ).annotate(
             best_grade=Max('grade')
         ).order_by('attempt__quiz__title')
 
+        # Fetch best grades for assignments in this course
         best_assignment_grades = Grade.objects.filter(
             attempt__assignment__course=course,
-            attempt__student=request.user
+            attempt__student=student
         ).values(
             'attempt__assignment__title'
         ).annotate(
@@ -113,14 +110,11 @@ def course_detail(request, pk):
             'best_assignment_grades': best_assignment_grades,
         })
 
-    # Add common context data for both teachers and students
+    # Common context data for both teachers and students
     lessons = course.lesson_set.all()
-    context.update({
-        'lessons': lessons,
-    })
+    context['lessons'] = lessons
 
     return render(request, 'courses/course_detail.html', context)
-
 
 
 @login_required

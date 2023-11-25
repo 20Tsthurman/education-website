@@ -2,25 +2,26 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>Your Grades</h2>
-  <table>
-    <thead>
+<h2>Your Grades:</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Course</th>
+      <th>Best Grade</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for course, grade in best_grades.items %}
       <tr>
-        <th>Quiz Title</th>
-        <th>Grade</th>
+        <td>{{ course.name }}</td>
+        <td>{{ grade }}%</td>
       </tr>
-    </thead>
-    <tbody>
-      {% for grade in best_grades %}
-        <tr>
-          <td>{{ grade.quiz__title }}</td>
-          <td>{{ grade.final_grade }}%</td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="2">No grades available.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    {% empty %}
+      <tr>
+        <td colspan="2">No grades available.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
 {% endblock %}

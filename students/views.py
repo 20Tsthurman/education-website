@@ -44,6 +44,23 @@ def view_grades(request):
 
 
 @login_required
+def view_course_grades(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    quizzes = Quiz.objects.filter(course=course)
+
+    quizzes_with_grades = []
+    for quiz in quizzes:
+        attempts = Attempt.objects.filter(student=request.user, quiz=quiz).order_by('-final_grade')
+        highest_grade = attempts.first().final_grade if attempts.exists() else None
+        quizzes_with_grades.append({
+            'quiz': quiz,
+            'attempts': attempts,
+            'highest_grade': highest_grade
+        })
+
+    return render(request, 'students/course_grades.html', {'course': course, 'quizzes_with_grades': quizzes_with_grades})
+
+@login_required
 def take_quiz(request, quiz_id, question_number):
     quiz = get_object_or_404(Quiz, id=quiz_id)
     questions = quiz.question_set.all()

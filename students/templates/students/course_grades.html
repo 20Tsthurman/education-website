@@ -46,34 +46,85 @@
 {% endblock %}
 
 {% block content %}
-    <div class="grades-container">
-        <h2 class="text-center mb-4">Grades for {{ course.name }}</h2>
-        {% for quiz_data in quizzes_with_grades %}
-            <div class="quiz-card">
-                <div class="quiz-card-header">
-                    {{ quiz_data.quiz.title }}
-                </div>
-                <div class="quiz-card-body">
-                    <p class="card-text">
-                        <strong>Highest Grade:</strong> 
-                        <span class="badge badge-success">{{ quiz_data.highest_grade }}%</span>
-                    </p>
-                    <ul class="list-group">
-                        {% for attempt in quiz_data.attempts %}
-                            <li class="list-group-item">
-                                Attempt {{ attempt.attempt_number }}: 
-                                <span class="badge badge-primary float-end">{{ attempt.final_grade }}%</span>
-                            </li>
-                        {% empty %}
-                            <li class="list-group-item">No attempts made.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+<div class="grades-container">
+    {% if final_grade %}
+    <h3>Your Final Grade for {{ course.name }}</h3>
+    <p class="final-grade">Final Grade: {{ final_grade }}% ({{ letter_grade }})</p>
+{% endif %}
+
+
+    <h2 class="text-center mb-4">Grades for {{ course.name }}</h2>
+    {% for quiz_data in quizzes_with_grades %}
+        <div class="quiz-card">
+            <div class="quiz-card-header">
+                {{ quiz_data.quiz.title }}
             </div>
-        {% empty %}
-            <div class="alert alert-info" role="alert">
-                No quizzes available.
+            <div class="quiz-card-body">
+                <p class="card-text">
+                    <strong>Highest Grade:</strong> 
+                    <span class="badge badge-success">{{ quiz_data.highest_grade }}%</span>
+                </p>
+                <p class="card-text">
+                    <strong>Weighted Score:</strong> 
+                    <span class="badge badge-info">{{ quiz_data.weighted_score }}%</span>
+                </p>
+                <p class="card-text">
+                    <strong>Letter Grade:</strong> 
+                    <span class="badge badge-warning">{{ quiz_data.letter_grade }}</span>
+                </p>
+                <ul class="list-group">
+                    {% for attempt in quiz_data.attempts %}
+                        <li class="list-group-item">
+                            Attempt {{ attempt.attempt_number }}: 
+                            <span class="badge badge-primary float-end">{{ attempt.final_grade }}%</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">No attempts made.</li>
+                    {% endfor %}
+                </ul>
             </div>
-        {% endfor %}
+        </div>
+    {% empty %}
+        <div class="alert alert-info" role="alert">
+            No quizzes available.
+        </div>
+    {% endfor %}
+</div>
+    
+    <!-- Chart Section -->
+    <div class="row">
+        <div class="col-12">
+            <h3>Your Final Grades Over Time</h3>
+            <canvas id="gradesOverTimeChart"></canvas>
+        </div>
     </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var ctx = document.getElementById('gradesOverTimeChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'line', // You can change the chart type if needed
+            data: {
+                labels: {{ attempt_labels|safe }}, // Pass the attempt labels as a list from your Django view
+                datasets: [{
+                    label: 'Final Grades',
+                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1,
+                    data: {{ final_grades|safe }}, // Pass the final grades as a list from your Django view
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100, // Adjust the maximum value if needed
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

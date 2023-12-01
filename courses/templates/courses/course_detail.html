@@ -32,23 +32,26 @@
                     </ul>
                 </div>
 
-                <!-- Quizzes Section for teachers -->
-                <div class="card mb-4">
-                    <div class="card-header">Quizzes</div>
-                    <ul class="list-group list-group-flush">
-                        {% for quiz in course.quizzes.all %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <a href="{% url 'teachers:quiz_detail' quiz.id %}">{{ quiz.title }}</a>
-                                <span>
-                                    <a href="{% url 'teachers:edit_quiz' quiz.id %}" class="btn btn-outline-secondary btn-sm">Edit</a>
-                                    <a href="{% url 'teachers:delete_quiz' quiz.id %}" class="btn btn-outline-danger btn-sm ml-2">Delete</a>
-                                </span>
-                            </li>
-                        {% empty %}
-                            <li class="list-group-item">No quizzes available.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+<!-- Quizzes Section for teachers -->
+<div class="card mb-4">
+    <div class="card-header">Quizzes</div>
+    <ul class="list-group list-group-flush">
+        {% for quiz in course.quizzes.all %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{% url 'teachers:quiz_detail' quiz.id %}">{{ quiz.title }}</a>
+                <span>
+                    <a href="{% url 'teachers:edit_quiz' quiz.id %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                    <a href="{% url 'teachers:delete_quiz' quiz.id %}" class="btn btn-outline-danger btn-sm ml-2">Delete</a>
+                    <!-- Link to set quiz weight -->
+                    <a href="{% url 'teachers:set_quiz_weight' quiz.id %}" class="btn btn-outline-primary btn-sm ml-2">Set Weight</a>
+                </span>
+            </li>
+        {% empty %}
+            <li class="list-group-item">No quizzes available.</li>
+        {% endfor %}
+    </ul>
+</div>
+
 
                 <!-- Student Roster for teachers -->
                 <h3>Student Roster</h3>
@@ -60,44 +63,50 @@
                     {% endfor %}
                 </ul>
 
-                <!-- Gradebook Section for teachers -->
-                <h3>Gradebook</h3>
-                <table class="table table-bordered table-hover">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>Student</th>
-                            <th>Quiz</th>
-                            <th>Attempt Number</th>
-                            <th>Completion Status</th>
-                            <th class="text-right">Final Grade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for student_email, quizzes in students_attempts.items %}
-                            {% for quiz_title, attempts in quizzes.items %}
-                                {% for attempt in attempts %}
-                                    <tr>
-                                        <td>{{ student_email }}</td>
-                                        <td>{{ quiz_title }}</td>
-                                        <td>{{ attempt.attempt_number }}</td>
-                                        <td>
-                                            {% if attempt.is_completed %}
-                                                Completed
-                                            {% else %}
-                                                In Progress
-                                            {% endif %}
-                                        </td>                        
-                                        <td class="text-right">{{ attempt.final_grade }}%</td>
-                                    </tr>
-                                {% endfor %}
-                            {% endfor %}
-                        {% empty %}
-                            <tr>
-                                <td colspan="5">No quiz attempts recorded.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<!-- Gradebook Section for teachers -->
+<h3>Gradebook</h3>
+<table class="table table-bordered table-hover">
+    <thead class="thead-light">
+        <tr>
+            <th>Student</th>
+            <th>Quiz</th>
+            <th>Attempt Number</th>
+            <th>Completion Status</th>
+            <th class="text-right">
+                {% if request.GET.sort == 'final_grade_asc' %}
+                    <a href="?sort=final_grade_desc">Final Grade &#9660;</a>
+                {% else %}
+                    <a href="?sort=final_grade_asc">Final Grade &#9650;</a>
+                {% endif %}
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student_email, quizzes in students_attempts.items %}
+            {% for quiz_title, attempts in quizzes.items %}
+                {% for attempt in attempts %}
+                    <tr>
+                        <td>{{ student_email }}</td>
+                        <td>{{ quiz_title }}</td>
+                        <td>{{ attempt.attempt_number }}</td>
+                        <td>
+                            {% if attempt.is_completed %}
+                                Completed
+                            {% else %}
+                                In Progress
+                            {% endif %}
+                        </td>                        
+                        <td class="text-right">{{ attempt.final_grade }}%</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        {% empty %}
+            <tr>
+                <td colspan="5">No quiz attempts recorded.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
                 <!-- Display assignment grades for teachers -->
                 <h4>Assignment Grades</h4>
@@ -125,6 +134,7 @@
                 </table>
 
             {% else %}
+            
                 <!-- For students, list the lessons they can view -->
                 <h3>Lessons</h3>
                 <ul class="list-group">
@@ -149,8 +159,27 @@
                     {% endfor %}
                 </ul>
 
+                <!-- Display the final grade for students -->
+                <h3>Your Final Grade</h3>
+                <p id="final-grade">Loading final grade...</p>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        fetch("{% url 'students:calculate_student_final_grade' course.id %}")
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.final_grade !== null) {
+                                    document.getElementById('final-grade').textContent = "Your final grade for this course is: " + data.final_grade + "%";
+                                } else {
+                                    document.getElementById('final-grade').textContent = "Your final grade is not available yet.";
+                                }
+                            });
+                    });
+                </script>
+
                 <div class="text-center mt-3">
                     <a href="{% url 'students:view_course_grades' course.id %}" class="btn btn-primary btn-lg">View Grades</a>
+                    <a href="{% url 'students:view_percentiles' %}" class="btn btn-primary btn-lg">View Your Score Percentiles</a>
                 </div>
             {% endif %}
         </div>

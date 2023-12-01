@@ -36,3 +36,8 @@ class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
         fields = ['title'] 
+
+class QuizWeightForm(forms.ModelForm):
+    class Meta:
+        model = Quiz
+        fields = ['weight']

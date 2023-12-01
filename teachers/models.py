@@ -15,12 +15,14 @@ class Assignment(models.Model):
     teacher = models.ForeignKey('teachers.Teacher', on_delete=models.CASCADE)  # Updated this line
     students = models.ManyToManyField('users.CustomUser', through='AssignmentEnrollment')
     course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='assignments', null=True)
+    weight = models.DecimalField(max_digits=5, decimal_places=2, default=1.0)
 
 class Quiz(models.Model):
     title = models.CharField(max_length=100, db_column='quiz_title')
     teacher = models.ForeignKey('teachers.Teacher', on_delete=models.CASCADE)
     students = models.ManyToManyField('users.CustomUser', through='QuizEnrollment')
     course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='quizzes', null=True)
+    weight = models.DecimalField(max_digits=5, decimal_places=2, default=1.0)
     
     def get_absolute_url(self):
         return reverse('teachers:quiz_detail', kwargs={'quiz_id': self.id})
@@ -78,6 +80,14 @@ class Grade(models.Model):
     question = models.ForeignKey('Question', on_delete=models.CASCADE, null=True)
     grade = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True, blank=True)
+
+    
+    def calculate_weighted_score(self):
+        if self.assignment:
+            return self.grade * self.assignment.weight
+        elif self.quiz:
+            return self.grade * self.quiz.weight
+        return self.grade  # Default case if no weight is defined
 
 class LessonEnrollment(models.Model):
     lesson = models.ForeignKey('courses.Lesson', on_delete=models.CASCADE)  # Ensure this line stays as is

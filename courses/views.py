@@ -1,4 +1,6 @@
 from django.shortcuts import redirect, render
+
+import courses
 from .forms import CourseForm
 from django.contrib import messages
 from django.http import HttpResponseForbidden
@@ -71,7 +73,6 @@ def course_detail(request, pk):
                 if quiz.title not in students_attempts[student_email]:
                     students_attempts[student_email][quiz.title] = []
 
-                # Limit to latest three attempts
                 if len(students_attempts[student_email][quiz.title]) < 3:
                     students_attempts[student_email][quiz.title].append(attempt)
 
@@ -80,19 +81,20 @@ def course_detail(request, pk):
             'students_attempts': students_attempts
         })
 
-    elif hasattr(request.user, 'student'):
-        student = request.user.student
+    elif request.user.is_student:
+        # Student's view
+        student_user = request.user
 
         # Fetch attempts for quizzes in this course
         student_attempts = {}
         for quiz in course.quizzes.all():
-            attempts = Attempt.objects.filter(quiz=quiz, student=student).order_by('-timestamp')[:3]
+            attempts = Attempt.objects.filter(quiz=quiz, student=student_user).order_by('-timestamp')[:3]
             student_attempts[quiz.title] = attempts
 
         # Fetch grades for quizzes and assignments
         best_quiz_grades = Grade.objects.filter(
             attempt__quiz__course=course,
-            attempt__student=student
+            attempt__student=student_user
         ).values(
             'attempt__quiz__title'
         ).annotate(
@@ -100,13 +102,13 @@ def course_detail(request, pk):
         ).order_by('attempt__quiz__title')
 
         best_assignment_grades = Grade.objects.filter(
-            attempt__assignment__course=course,
-            attempt__student=student
+            assignment__course=course,
+            attempt__student=student_user
         ).values(
-            'attempt__assignment__title'
+            'assignment__title'
         ).annotate(
             best_grade=Max('grade')
-        ).order_by('attempt__assignment__title')
+        ).order_by('assignment__title')
 
         context.update({
             'student_attempts': student_attempts,

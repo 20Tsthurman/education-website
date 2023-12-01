@@ -15,5 +15,7 @@ urlpatterns = [
     path('quiz_results/<int:quiz_id>/', views.quiz_results, name='quiz_results'),
     path('review_test/<int:quiz_id>/<int:attempt_number>/', views.review_test, name='review_test'),
     path('course/<int:course_id>/grades/', view_course_grades, name='view_course_grades'),
+    path('percentiles/', views.view_percentiles, name='view_percentiles'),
+    path('course/<int:course_id>/final_grade/', views.calculate_student_final_grade, name='calculate_student_final_grade'),
 
 ]

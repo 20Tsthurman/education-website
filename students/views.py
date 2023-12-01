@@ -1,4 +1,7 @@
 # students/views.py
+from datetime import datetime
+import json
+from django.http import JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from courses.models import Course, Enrollment
@@ -9,6 +12,7 @@ from django.contrib import messages
 from django.db.models import Avg
 from django.utils import timezone
 from django.db.models import Max, Q
+from teachers.utils import score_to_letter_grade
 
 @login_required
 def student_dashboard(request):
@@ -22,43 +26,149 @@ def lesson_detail(request, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id)
     return render(request, 'students/lesson_detail.html', {'lesson': lesson})
 
+from decimal import Decimal, getcontext
+
+# Set the precision for Decimal operations if necessary
+getcontext().prec = 5
+
+# Helper function to calculate percentile
+def get_percentile(grades, percentile):
+    # Ensure grades are sorted and in Decimal format
+    grades = sorted(map(Decimal, grades))
+    index = Decimal((len(grades) - 1) * percentile) / 100
+    floor_index = int(index)
+    ceil_index = min(floor_index + 1, len(grades) - 1)
+    
+    # When the index is an integer
+    if floor_index == ceil_index:
+        return grades[floor_index]
+    else:
+        # Perform the interpolation using Decimal arithmetic
+        floor_value = grades[floor_index]
+        ceil_value = grades[ceil_index]
+        proportion = index - Decimal(floor_index)
+        interpolated_value = floor_value + (ceil_value - floor_value) * proportion
+        return interpolated_value
+
+@login_required
+def view_percentiles(request):
+    if not request.user.is_student:
+        messages.error(request, "This page is only accessible to students.")
+        return redirect('users:dashboard')
+
+    # Determine the course(s) the student is enrolled in
+    enrollments = Enrollment.objects.filter(student=request.user)
+    courses = [enrollment.course for enrollment in enrollments]
+
+    # Fetch all final grades for all students in those courses
+    all_grades_list = list(Attempt.objects.filter(
+        quiz__course__in=courses, 
+        is_completed=True
+    ).values_list('final_grade', flat=True))
+    all_grades_list = [grade for grade in all_grades_list if grade is not None]  # filter out None values
+    all_grades_decimal = list(map(Decimal, all_grades_list))
+
+    # Calculate the percentiles for the entire class
+    class_percentiles = {
+        '25th': get_percentile(all_grades_decimal, 25),
+        '50th (Median)': get_percentile(all_grades_decimal, 50),
+        '75th': get_percentile(all_grades_decimal, 75),
+    }
+
+    # Calculate the percentile rank for the logged-in student within the class
+    student_highest_grade = Attempt.objects.filter(
+        student=request.user,
+        is_completed=True
+    ).aggregate(Max('final_grade'))['final_grade__max'] or Decimal('0.00')
+    student_highest_grade = Decimal(student_highest_grade)
+    student_percentile_rank = sum(grade <= student_highest_grade for grade in all_grades_decimal) / len(all_grades_decimal) * 100
+
+    # Get the list of all attempts for the logged-in student
+    student_attempts = Attempt.objects.filter(
+        student=request.user, 
+        is_completed=True
+    ).order_by('quiz', '-timestamp')
+
+    # Fetch the subject scores for the logged-in student's completed attempts
+    final_grades = list(Attempt.objects.filter(
+        student=request.user, 
+        is_completed=True
+    ).values_list('final_grade', flat=True))
+    final_grades = [float(grade) for grade in final_grades if grade is not None]  # Convert to float and filter out None
+
+    # Prepare context with all data
+    context = {
+        'class_percentiles': class_percentiles,
+        'student_percentile_rank': student_percentile_rank,
+        'student_attempts': student_attempts,
+        'final_grades': json.dumps(final_grades),
+    }
+
+    return render(request, 'students/view_percentiles.html', context)
+
+
 @login_required
 def view_grades(request):
     # Retrieve all quizzes that the student has attempted
     attempted_quizzes = Quiz.objects.filter(attempt__student=request.user).distinct()
 
-    # Prepare a list to hold the best grade for each quiz
-    best_grades = []
+    quizzes_with_grades = []
 
     for quiz in attempted_quizzes:
-        # Get the best grade for the current quiz
-        best_grade = Attempt.objects.filter(student=request.user, quiz=quiz).order_by('-final_grade').first()
+        best_attempt = Attempt.objects.filter(student=request.user, quiz=quiz).order_by('-final_grade').first()
 
-        if best_grade:
-            best_grades.append({
-                'quiz_title': quiz.title,
-                'final_grade': best_grade.final_grade
-            })
+        if best_attempt:
+            weighted_score = best_attempt.final_grade * quiz.weight
+            letter_grade = score_to_letter_grade(weighted_score)
 
-    return render(request, 'students/view_grades.html', {'best_grades': best_grades})
+            quizzes_with_grades.append({
+                'quiz': quiz,
+                'highest_grade': best_attempt.final_grade,
+                'weighted_score': weighted_score,
+                'letter_grade': letter_grade,
+                'attempts': Attempt.objects.filter(student=request.user, quiz=quiz)
+        })
 
+    return render(request, 'students/view_grades.html', {'quizzes_with_grades': quizzes_with_grades})
 
 @login_required
 def view_course_grades(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     quizzes = Quiz.objects.filter(course=course)
 
+    total_weighted_score = 0
+    total_weight = 0
     quizzes_with_grades = []
+
     for quiz in quizzes:
         attempts = Attempt.objects.filter(student=request.user, quiz=quiz).order_by('-final_grade')
         highest_grade = attempts.first().final_grade if attempts.exists() else None
-        quizzes_with_grades.append({
-            'quiz': quiz,
-            'attempts': attempts,
-            'highest_grade': highest_grade
-        })
 
-    return render(request, 'students/course_grades.html', {'course': course, 'quizzes_with_grades': quizzes_with_grades})
+        if highest_grade is not None:
+            weighted_score = highest_grade * quiz.weight / 100
+            total_weighted_score += weighted_score
+            total_weight += quiz.weight
+
+            quizzes_with_grades.append({
+                'quiz': quiz,
+                'attempts': attempts,
+                'highest_grade': highest_grade,
+                'weighted_score': weighted_score
+            })
+
+    final_grade = None
+    letter_grade = None
+    if total_weight > 0:
+        final_grade = round((total_weighted_score / total_weight) * 100, 2)  # Multiply by 100 to convert to percentage
+        letter_grade = score_to_letter_grade(final_grade)
+
+    return render(request, 'students/course_grades.html', {
+        'course': course, 
+        'quizzes_with_grades': quizzes_with_grades,
+        'final_grade': final_grade,
+        'letter_grade': letter_grade
+    })
+
 
 @login_required
 def take_quiz(request, quiz_id, question_number):
@@ -175,7 +285,26 @@ def quiz_results(request, quiz_id):
     }
     return render(request, 'students/quiz_results.html', context)
 
+@login_required
+def calculate_student_final_grade(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    student = request.user.student
 
+    total_weighted_score = 0
+    total_weight = 0
+
+    for quiz in course.quizzes.all():
+        best_attempt = Attempt.objects.filter(student=student, quiz=quiz).order_by('-final_grade').first()
+        if best_attempt and best_attempt.final_grade is not None:
+            weighted_score = best_attempt.final_grade * quiz.weight / 100
+            total_weighted_score += weighted_score
+            total_weight += quiz.weight
+
+    if total_weight > 0:
+        final_grade = total_weighted_score / total_weight
+        return JsonResponse({'final_grade': final_grade})
+    else:
+        return JsonResponse({'final_grade': None})
 
 def calculate_average_scores(grades_queryset):
     average_scores = {}

@@ -1,12 +1,15 @@
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+import courses
 from courses.models import Course, Enrollment, Lesson
 from courses.forms import LessonForm
 from django.contrib.auth.decorators import login_required
 from teachers.models import Teacher
 from django.contrib.auth.models import User
-from .forms import ChoiceFormSet
+
+from teachers.utils import score_to_letter_grade
+from .forms import ChoiceFormSet, QuizWeightForm
 from teachers.forms import CourseSelectionForm, EnrollmentForm
 from .models import Attempt, Question
 from .forms import QuizForm 
@@ -14,6 +17,7 @@ from .forms import QuestionForm
 from django.db import transaction
 from teachers.models import Grade, Quiz, Assignment
 from django.db.models import Q
+from collections import Counter
 
 
 @login_required
@@ -108,6 +112,18 @@ def create_lesson(request, course_id):
     return render(request, 'teachers/create_lesson.html', {'form': form, 'course': course})
 
 
+def grade_distribution(request):
+    grades = Grade.objects.all()
+    letter_grades = [score_to_letter_grade(grade.calculate_weighted_score()) for grade in grades]
+    grade_counts = Counter(letter_grades)
+
+    # Prepare data for the pie chart
+    chart_data = {
+        'labels': grade_counts.keys(),
+        'data': grade_counts.values(),
+    }
+    return render(request, 'teachers/grade_distribution.html', {'chart_data': chart_data})
+
 @login_required
 def gradebook(request):
     if not hasattr(request.user, 'teacher'):
@@ -129,14 +145,23 @@ def gradebook(request):
             quiz_grades = Grade.objects.filter(attempt__quiz__course=course, attempt__student=student)
             assignment_grades = Grade.objects.filter(assignment__course=course, assignment__students=student)
             
-            # Append the student and their grades to the student_grades list
+            # Calculate the total grade for each student
+            total_grade = sum(max(grade.grade, 0) for grade in quiz_grades) + sum(max(grade.grade, 0) for grade in assignment_grades)
+            
+            # Append the student and their total grade to the student_grades list
             student_grades.append({
                 'student': student,
-                'quiz_grades': quiz_grades,
-                'assignment_grades': assignment_grades
+                'total_grade': total_grade,
             })
 
-    # Pass the student_grades list to the template
+    # Sort the student_grades list by Total Grade (ascending order) if 'sort' is not provided in the URL
+    sort_param = request.GET.get('sort')
+    if sort_param == 'final_grade_desc':
+        student_grades.sort(key=lambda x: x['total_grade'], reverse=True)
+    else:
+        student_grades.sort(key=lambda x: x['total_grade'])
+
+    # Pass the sorted student_grades list to the template
     return render(
         request,
         'teachers/gradebook.html',
@@ -228,3 +253,18 @@ def quiz_detail(request, quiz_id):
 
     questions = Question.objects.filter(quiz=quiz)
     return render(request, 'teachers/quiz_detail.html', {'quiz': quiz, 'questions': questions})
+
+@login_required
+def set_quiz_weight(request, quiz_id):
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+
+    if request.method == 'POST':
+        form = QuizWeightForm(request.POST, instance=quiz)
+        if form.is_valid():
+            form.save()
+            # Redirect to a success page or the quiz list
+            return redirect('courses:course_detail', pk=quiz.course.id)
+    else:
+        form = QuizWeightForm(instance=quiz)
+
+    return render(request, 'teachers/set_quiz_weight.html', {'form': form, 'quiz': quiz})

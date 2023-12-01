@@ -1,0 +1,136 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .grades-container {
+        max-width: 800px;
+        margin: auto;
+        padding-top: 20px;
+    }
+    .quiz-card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .quiz-card-header {
+        background-color: #0056b3;
+        color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 10px 15px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .quiz-card-body {
+        padding: 15px;
+    }
+    .badge-success {
+        background-color: #28a745;
+    }
+    .badge-primary {
+        background-color: #007bff;
+    }
+    .list-group-item {
+        border: 1px solid #e3e6ea;
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+    .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+        padding: 10px;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grades-container">
+    <div class="row">
+        <!-- Class Percentile Scores Section -->
+        <div class="col-md-6">
+            <div class="quiz-card">
+                <div class="quiz-card-header">
+                    Class Score Percentiles
+                </div>
+                <div class="quiz-card-body">
+                    <ul class="list-group">
+                        {% for percentile, grade in class_percentiles.items %}
+                            <li class="list-group-item">
+                                {{ percentile }} Percentile: 
+                                <span class="badge badge-primary float-end">{{ grade }}%</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student's Individual Grades Section -->
+        <div class="col-md-6">
+            <h3>Your Grades</h3>
+            {% if student_attempts %}
+                <ul class="list-group">
+                    {% for attempt in student_attempts %}
+                        <li class="list-group-item">
+                            {{ attempt.quiz.title }} Attempt {{ attempt.attempt_number }}: 
+                            <span class="badge badge-primary float-end">{{ attempt.final_grade }}%</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No recorded grades available.</p>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Student's Percentile Rank in the Class -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                Your Percentile Rank in the Class: {{ student_percentile_rank }}
+            </div>
+        </div>
+    </div>
+    <!-- Chart Canvas -->
+    <div class="row">
+        <div class="col-12">
+            <canvas id="gradesOverTimeChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Data for the chart (replace with your actual data)
+    var labels = ["Attempt 1", "Attempt 2"];
+    var finalGrades = [100.00, 50.00];
+
+    // Get the canvas element
+    var ctx = document.getElementById('gradesOverTimeChart').getContext('2d');
+
+    // Create the chart
+    var chart = new Chart(ctx, {
+        type: 'line', // You can change the chart type if needed
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Final Grades',
+                backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                borderColor: 'rgba(0, 123, 255, 1)',
+                borderWidth: 1,
+                data: finalGrades,
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100, // Adjust the maximum value if needed
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

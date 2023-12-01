@@ -1,0 +1,17 @@
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<canvas id="gradeChart"></canvas>
+<script>
+    var ctx = document.getElementById('gradeChart').getContext('2d');
+    var gradeChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_data.labels|safe }},
+            datasets: [{
+                data: {{ chart_data.data|safe }},
+                // Add colors and other chart options as needed
+            }]
+        }
+    });
+</script>

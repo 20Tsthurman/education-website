@@ -18,5 +18,6 @@ urlpatterns = [
     path('delete_quiz/<int:quiz_id>/', views.delete_quiz, name='delete_quiz'),
     path('quiz_detail/<int:quiz_id>/', views.quiz_detail, name='quiz_detail'),
     path('gradebook/', views.gradebook, name='gradebook'),
+    path('set_quiz_weight/<int:quiz_id>/', views.set_quiz_weight, name='set_quiz_weight'),
 ]
 
